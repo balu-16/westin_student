@@ -3,6 +3,17 @@ import type { AttendanceBreakdown, ClassSession, Student } from '../types'
 
 const SESSION_KEY = 'student-portal.session'
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '')
+
+/** Build an API URL for both local relative requests and deployed backends. */
+export function apiUrl(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  const apiPath = normalizedPath === '/api' || normalizedPath.startsWith('/api/')
+    ? normalizedPath
+    : `/api${normalizedPath}`
+  return `${API_BASE_URL}${apiPath}`
+}
+
 /* ------------------------------------------------------------------ */
 /* Session storage                                                     */
 /* ------------------------------------------------------------------ */
@@ -79,7 +90,7 @@ async function sendRequest(
   const headers: Record<string, string> = {}
   if (options.body !== undefined) headers['Content-Type'] = 'application/json'
   if (token) headers.Authorization = `Bearer ${token}`
-  return fetch(`/api${path}`, {
+  return fetch(apiUrl(path), {
     method: options.method ?? 'GET',
     headers,
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
@@ -111,7 +122,7 @@ function refreshSession(refreshToken: string): Promise<Session | null> {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
       try {
-        const res = await fetch('/api/auth/refresh', {
+        const res = await fetch(apiUrl('/auth/refresh'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ refreshToken }),

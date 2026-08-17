@@ -8,6 +8,7 @@ import {
 } from 'react'
 import {
   apiFetch,
+  apiUrl,
   clearApiCache,
   clearSession,
   getSession,
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const session = getSession()
     if (session?.refreshToken) {
       // Best-effort server-side revocation — ignore failures.
-      void fetch('/api/auth/logout', {
+      void fetch(apiUrl('/auth/logout'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: session.refreshToken }),
