@@ -395,7 +395,7 @@ export interface SettingsPayload {
   email: boolean
   announcements: boolean
   reminders: boolean
-  theme: string
+  theme?: string
 }
 
 /* ------------------------------------------------------------------ */

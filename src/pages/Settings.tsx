@@ -40,7 +40,6 @@ export function Settings() {
   const [emailEnabled, setEmailEnabled] = useState(true)
   const [announcementsOn, setAnnouncementsOn] = useState(true)
   const [assignmentReminders, setAssignmentReminders] = useState(true)
-  const [lightTheme, setLightTheme] = useState(true)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [applied, setApplied] = useState(false)
@@ -52,7 +51,6 @@ export function Settings() {
     setEmailEnabled(settings.email)
     setAnnouncementsOn(settings.announcements)
     setAssignmentReminders(settings.reminders)
-    setLightTheme(settings.theme !== 'dark')
     setApplied(true)
   }, [settings, applied])
 
@@ -67,7 +65,6 @@ export function Settings() {
           email: emailEnabled,
           announcements: announcementsOn,
           reminders: assignmentReminders,
-          theme: lightTheme ? 'light' : 'dark',
         },
       })
       setSaved(true)
@@ -170,17 +167,10 @@ export function Settings() {
               <SkeletonRows rows={4} />
             </Card>
 
-            {/* Appearance + Security */}
-            <div className="space-y-6">
-              <Card>
-                <h2 className="mb-4 text-base font-semibold text-ink">Appearance</h2>
-                <SkeletonRows rows={1} />
-              </Card>
-              <Card>
-                <h2 className="mb-4 text-base font-semibold text-ink">Security</h2>
-                <SkeletonRows rows={1} />
-              </Card>
-            </div>
+            <Card>
+              <h2 className="mb-4 text-base font-semibold text-ink">Security</h2>
+              <SkeletonRows rows={1} />
+            </Card>
           </div>
         </>
       ) : (
@@ -274,30 +264,15 @@ export function Settings() {
           </div>
         </Card>
 
-        {/* Appearance + Security */}
-        <div className="space-y-6">
-          <Card>
-            <h2 className="mb-4 text-base font-semibold text-ink">Appearance</h2>
-            <div className="divide-y divide-line">
-              <Toggle
-                label="Light theme"
-                description="The portal uses a light sky-blue theme by default."
-                checked={lightTheme}
-                onChange={setLightTheme}
-              />
-            </div>
-          </Card>
-
-          <Card>
-            <h2 className="mb-4 text-base font-semibold text-ink">Security</h2>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button variant="ghost" onClick={handleLogout} className="text-danger hover:bg-danger/10 hover:text-danger">
-                <LogOut size={16} aria-hidden="true" />
-                Logout
-              </Button>
-            </div>
-          </Card>
-        </div>
+        <Card>
+          <h2 className="mb-4 text-base font-semibold text-ink">Security</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="ghost" onClick={handleLogout} className="text-danger hover:bg-danger/10 hover:text-danger">
+              <LogOut size={16} aria-hidden="true" />
+              Logout
+            </Button>
+          </div>
+        </Card>
       </div>
       </>
       )}
