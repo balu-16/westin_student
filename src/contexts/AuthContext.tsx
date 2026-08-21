@@ -23,6 +23,8 @@ interface AuthContextValue {
   isAuthenticated: boolean
   login: (emailOrId: string, password: string) => Promise<void>
   logout: () => void
+  refreshProfile: () => Promise<void>
+  updateAvatar: (avatarUrl: string | null) => void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -45,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     const session = getSession()
     if (session?.refreshToken) {
-      // Best-effort server-side revocation — ignore failures.
       void fetch(apiUrl('/auth/logout'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -57,9 +58,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }, [])
 
+  const refreshProfile = useCallback(async () => {
+    try {
+      const me = await apiFetch<any>('/auth/me')
+      const session = getSession()
+      if (session) {
+        const updated = { ...session, user: me.user ?? me }
+        setSession(updated as Session)
+        setUser(mapStudentUser(updated.user as any))
+      } else if (me) {
+        setUser(mapStudentUser((me.user ?? me) as any))
+      }
+    } catch {}
+  }, [])
+
+  const updateAvatar = useCallback((avatarUrl: string | null) => {
+    setUser((prev) => (prev ? { ...prev, avatarUrl } : prev))
+    const session = getSession()
+    if (session) {
+      ;(session.user as any).avatarUrl = avatarUrl
+      setSession(session)
+    }
+  }, [])
+
   const value = useMemo(
-    () => ({ user, isAuthenticated: user !== null, login, logout }),
-    [user, login, logout],
+    () => ({ user, isAuthenticated: user !== null, login, logout, refreshProfile, updateAvatar }),
+    [user, login, logout, refreshProfile, updateAvatar],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

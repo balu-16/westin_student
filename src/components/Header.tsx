@@ -1,13 +1,17 @@
 import type { ReactNode } from 'react'
-import { Bell, CalendarDays, Menu } from 'lucide-react'
+import { Bell, CalendarDays, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { useOutletContext } from 'react-router-dom'
 import { todayDateLabel } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
 import { cx } from '../utils'
+import type { DashboardLayoutContext } from '../layouts/DashboardLayout'
 
 interface HeaderProps {
   title: ReactNode
   subtitle?: string
   onMenuClick?: () => void
+  onToggleSidebar?: () => void
+  collapsed?: boolean
   /** Show the personalised greeting (dashboard); otherwise render `title` */
   showGreeting?: boolean
   /** Optional custom top-right actions; defaults to bell + date pill */
@@ -18,10 +22,19 @@ export function Header({
   title,
   subtitle,
   onMenuClick,
+  onToggleSidebar,
+  collapsed,
   showGreeting = false,
   actions,
 }: HeaderProps) {
   const { user } = useAuth()
+  let outletCtx: DashboardLayoutContext | null = null
+  try {
+    outletCtx = useOutletContext<DashboardLayoutContext>() as any
+  } catch {}
+  const effToggle = onToggleSidebar ?? outletCtx?.toggleSidebar
+  const effCollapsed = collapsed ?? outletCtx?.collapsed
+  const effMenu = onMenuClick ?? outletCtx?.openMenu
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening'
 
@@ -29,14 +42,25 @@ export function Header({
     <header className="flex flex-wrap items-center justify-between gap-4">
       <div className="min-w-0">
         <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-ink sm:text-[1.7rem]">
-          {onMenuClick && (
+          {effMenu && (
             <button
               type="button"
-              onClick={onMenuClick}
+              onClick={effMenu}
               aria-label="Open navigation menu"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-ink-soft transition-colors duration-200 hover:text-primary lg:hidden"
             >
               <Menu size={20} aria-hidden="true" />
+            </button>
+          )}
+          {effToggle && (
+            <button
+              type="button"
+              onClick={effToggle}
+              aria-label={effCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={effCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-ink-soft transition-colors duration-200 hover:text-primary lg:flex"
+            >
+              {effCollapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
             </button>
           )}
           {showGreeting ? (

@@ -35,6 +35,7 @@ export interface ApiUser {
   sectionLabel: string | null
   rollNo: string | null
   overallAttendance: number | string | null
+  avatarUrl: string | null
 }
 
 export interface Session {
@@ -69,11 +70,23 @@ export function clearSession(): void {
 
 export class ApiError extends Error {
   status: number
+  payload: unknown
 
-  constructor(message: string, status: number) {
+  constructor(status: number, payload: unknown) {
+    const rawMessage =
+      typeof payload === 'object' && payload !== null && 'message' in payload
+        ? (payload as { message?: unknown }).message
+        : null
+    const message =
+      (typeof rawMessage === 'string' && rawMessage
+        ? rawMessage
+        : Array.isArray(rawMessage)
+          ? rawMessage.filter((m): m is string => typeof m === 'string').join(', ')
+          : null) ?? `Request failed (${status})`
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.payload = payload
   }
 }
 
@@ -98,19 +111,16 @@ async function sendRequest(
 }
 
 async function toApiError(res: Response): Promise<ApiError> {
-  let message = ''
+  let payload: unknown = null
   try {
-    const payload = (await res.json()) as { message?: unknown }
-    const raw = payload?.message
-    if (Array.isArray(raw)) {
-      message = raw.filter((m): m is string => typeof m === 'string').join(', ')
-    } else if (typeof raw === 'string' && raw) {
-      message = raw
-    }
+    payload = await res.json()
   } catch {
     // non-JSON error body — fall through to the generic message
   }
-  return new ApiError(message || `Request failed (${res.status})`, res.status)
+  if (payload === null || payload === undefined) {
+    payload = { message: `Request failed (${res.status})` }
+  }
+  return new ApiError(res.status, payload)
 }
 
 /** POST /api/auth/refresh once; persists and returns the new session.
@@ -163,13 +173,18 @@ export async function apiFetch<T = unknown>(
       if (!window.location.pathname.startsWith('/login')) {
         window.location.assign('/login')
       }
-      throw new ApiError('Your session has expired. Please sign in again.', 401)
+      throw new ApiError(401, { message: 'Your session has expired. Please sign in again.' })
     }
   }
 
   if (!res.ok) throw await toApiError(res)
   if (res.status === 204) return undefined as T
   return (await res.json()) as T
+}
+
+export async function uploadBytes(url: string, file: File): Promise<void> {
+  const res = await fetch(url, { method: 'PUT', body: file, headers: { 'Content-Type': file.type || 'application/octet-stream' } })
+  if (!res.ok) throw new Error(`Upload failed (${res.status})`)
 }
 
 /* ------------------------------------------------------------------ */
@@ -346,13 +361,14 @@ export interface MaterialsFile {
   uploadedBy: string | null
   date: string
   size: number
-  downloadUrl: string
+  downloadUrl: string | null
 }
 
 export interface MaterialsPayload {
   files: MaterialsFile[]
   folders: Array<{ id: string; name: string; fileCount: number }>
   stats: { totalFiles: number; totalSize: number; subjects: number }
+  pagination?: { page: number; pageSize: number; total: number; totalPages: number }
 }
 
 export interface ApiEvent {
@@ -489,6 +505,7 @@ export function mapStudentUser(user: ApiUser): Student {
     studentId: user.studentId ?? '',
     email: user.email,
     overallAttendance: Number(user.overallAttendance ?? 0) || 0,
+    avatarUrl: (user as any).avatarUrl ?? null,
   }
 }
 

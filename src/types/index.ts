@@ -49,6 +49,7 @@ export interface Student {
   studentId: string
   email: string
   overallAttendance: number
+  avatarUrl: string | null
 }
 
 export interface AttendanceBreakdown {

@@ -6,6 +6,7 @@ import { FallingIcons, HotelScene } from '../components/HotelScene'
 import westinLogoAvif from '../assets/images/westin-logo.avif'
 import westinLogoPng from '../assets/images/westin-logo.png'
 import { useAuth } from '../contexts/AuthContext'
+import { ApiError } from '../lib/api'
 
 // Preload the AVIF logo via its hashed build URL (Vite rewrites the import to
 // e.g. /assets/westin-logo-BOnCdI7I.avif, which is why index.html can't hard-
@@ -49,11 +50,27 @@ export function Login() {
       await login(email.trim(), password)
       navigate(from, { replace: true })
     } catch (err) {
-      setError(
-        err instanceof Error && err.message
-          ? err.message
-          : 'Unable to sign in right now. Please try again.',
-      )
+      let message: string
+      if (err instanceof ApiError) {
+        const payload = err.payload as { code?: string; message?: string } | null
+        const code = payload?.code
+        const serverMessage = typeof payload?.message === 'string' ? payload.message : ''
+        if (code === 'ACCOUNT_NOT_REGISTERED' || /not registered/i.test(serverMessage)) {
+          message = 'This email is not registered. Please contact your college administration.'
+        } else if (code === 'INVALID_CREDENTIALS' || /incorrect/i.test(serverMessage)) {
+          message = 'The password is incorrect.'
+        } else if (code === 'ACCOUNT_INACTIVE' || /inactive/i.test(serverMessage)) {
+          message = 'This account is inactive. Contact your college administration.'
+        } else {
+          message = err.message || 'Unable to sign in right now. Please try again.'
+        }
+      } else {
+        message =
+          err instanceof Error && err.message
+            ? err.message
+            : 'Unable to sign in right now. Please try again.'
+      }
+      setError(message)
       setLoading(false)
     }
   }
