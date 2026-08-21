@@ -5,6 +5,9 @@ import { useAuth } from '../contexts/AuthContext'
 
 export interface DashboardLayoutContext {
   openMenu: () => void
+  closeMenu: () => void
+  toggleMenu: () => void
+  isMenuOpen: boolean
   toggleSidebar: () => void
   collapsed: boolean
 }
@@ -52,7 +55,10 @@ export function DashboardLayout({ children }: { children?: ReactNode }) {
   }
 
   const toggleSidebar = () => setCollapsed((v) => !v)
-  const context: DashboardLayoutContext = { openMenu: () => setMenuOpen(true), toggleSidebar, collapsed }
+  const openMenu = () => setMenuOpen(true)
+  const closeMenu = () => setMenuOpen(false)
+  const toggleMenu = () => setMenuOpen((v) => !v)
+  const context: DashboardLayoutContext = { openMenu, closeMenu, toggleMenu, isMenuOpen: menuOpen, toggleSidebar, collapsed }
 
   return (
     <div className="min-h-screen bg-page">

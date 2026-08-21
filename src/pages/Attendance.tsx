@@ -418,7 +418,7 @@ export function Attendance() {
                 </h3>
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary-light hover:text-primary"
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary-light hover:text-primary lg:px-2 lg:py-1"
                 >
                   <Download size={15} aria-hidden="true" />
                   Download Report
@@ -500,7 +500,7 @@ export function Attendance() {
                     type="button"
                     aria-label="Previous month"
                     onClick={() => setMonth(shiftMonth(month, -1))}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary lg:h-8 lg:w-8"
                   >
                     <ChevronLeft size={15} aria-hidden="true" />
                   </button>
@@ -511,7 +511,7 @@ export function Attendance() {
                     type="button"
                     aria-label="Next month"
                     onClick={() => setMonth(shiftMonth(month, 1))}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary lg:h-8 lg:w-8"
                   >
                     <ChevronRight size={15} aria-hidden="true" />
                   </button>

@@ -89,7 +89,7 @@ export function Dashboard() {
           {dashPending ? (
             <SkeletonCards />
           ) : (
-            <section aria-label="Statistics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <section aria-label="Statistics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard icon={CalendarDays} title="Classes Today" value={String(stats?.classesToday ?? 0)} footnote={`${stats?.classesCompleted ?? 0} Completed`} />
               <StatCard
                 icon={PieChart}
@@ -104,14 +104,14 @@ export function Dashboard() {
           )}
 
           {/* Timetable + Attendance */}
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
             {dashPending ? (
               <SectionCard
                 title="Today's Timetable"
                 icon={<CalendarDays size={18} className="text-primary" aria-hidden="true" />}
                 actionLabel="View Full Timetable"
                 actionTo="/timetable"
-                className="xl:col-span-3"
+                className="lg:col-span-3"
               >
                 <SkeletonRows rows={4} />
               </SectionCard>
@@ -121,12 +121,12 @@ export function Dashboard() {
                 icon={<CalendarDays size={18} className="text-primary" aria-hidden="true" />}
                 actionLabel="View Full Timetable"
                 actionTo="/timetable"
-                className="xl:col-span-3"
+                className="lg:col-span-3"
               >
                 <ol className="relative">
                   <span
                     aria-hidden="true"
-                    className="absolute bottom-2 left-[138px] top-2 w-px bg-line sm:left-[148px]"
+                    className="absolute bottom-2 left-[100px] top-2 w-px bg-line sm:left-[138px] lg:left-[148px]"
                   />
                   {todaySessions.map((session) => (
                     <TimetableCard key={session.id} session={session} />
@@ -140,7 +140,7 @@ export function Dashboard() {
               icon={<ChartNoAxesColumnIncreasing size={18} className="text-primary" aria-hidden="true" />}
               actionLabel="View Details"
               actionTo="/attendance"
-              className="items-center xl:col-span-2"
+              className="items-center lg:col-span-2"
             >
               {attPending ? (
                 <div className="flex min-h-[300px] flex-1 flex-col items-center justify-center gap-8">
@@ -176,14 +176,14 @@ export function Dashboard() {
           </div>
 
           {/* Announcements + Quick links */}
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
             {dashPending ? (
               <SectionCard
                 title="Announcements"
                 icon={<Megaphone size={18} className="text-primary" aria-hidden="true" />}
                 actionLabel="View All"
                 actionTo="/timetable"
-                className="xl:col-span-3"
+                className="lg:col-span-3"
               >
                 <SkeletonRows rows={3} />
               </SectionCard>
@@ -193,7 +193,7 @@ export function Dashboard() {
                 icon={<Megaphone size={18} className="text-primary" aria-hidden="true" />}
                 actionLabel="View All"
                 actionTo="/timetable"
-                className="xl:col-span-3"
+                className="lg:col-span-3"
               >
                 <ul className="relative">
                   <span
@@ -207,8 +207,8 @@ export function Dashboard() {
               </SectionCard>
             )}
 
-            <SectionCard title="Quick Links" className="xl:col-span-2">
-              <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <SectionCard title="Quick Links" className="lg:col-span-2">
+              <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
                 {quickLinks.map((link) => (
                   <QuickLink key={link.id} item={link} />
                 ))}

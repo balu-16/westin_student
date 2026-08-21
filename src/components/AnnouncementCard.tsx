@@ -14,7 +14,7 @@ export function AnnouncementCard({ announcement, isLast = false }: AnnouncementC
       />
       <div className="ml-7 flex-1">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-          <h4 className="font-semibold text-ink">{announcement.title}</h4>
+          <h4 className="break-words font-semibold text-ink">{announcement.title}</h4>
           <time className="text-xs font-medium text-ink-soft">{announcement.date}</time>
         </div>
         <p className="mt-1 text-sm text-ink-soft">{announcement.message}</p>

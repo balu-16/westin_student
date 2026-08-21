@@ -50,7 +50,7 @@ export function SectionCard({
         {actionLabel && actionTo && (
           <Link
             to={actionTo}
-            className="flex shrink-0 items-center gap-0.5 rounded-lg px-2 py-1 text-sm font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary-light hover:text-primary"
+            className="flex shrink-0 items-center gap-0.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary-light hover:text-primary lg:px-2 lg:py-1"
           >
             {actionLabel}
             <ChevronRight size={15} aria-hidden="true" />

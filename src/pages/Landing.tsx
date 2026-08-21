@@ -307,7 +307,7 @@ export function Landing() {
               </a>
             </div>
 
-            <div className="mt-10 flex items-center gap-8 sm:gap-10">
+            <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4 sm:gap-x-10">
               {[
                 { value: '6', label: 'Subjects' },
                 { value: '87%', label: 'Avg. Attendance' },
@@ -443,7 +443,7 @@ export function Landing() {
             <ol className="relative">
               <span
                 aria-hidden="true"
-                className="absolute bottom-2 left-[138px] top-2 w-px bg-line sm:left-[148px]"
+                className="absolute bottom-2 left-[100px] top-2 w-px bg-line sm:left-[138px] lg:left-[148px]"
               />
               {todaySchedule.map((session) => (
                 <TimetableCard key={session.id} session={session} />

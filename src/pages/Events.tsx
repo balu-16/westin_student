@@ -198,14 +198,14 @@ function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
           <button
             type="button"
             aria-label="Previous month"
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary lg:h-7 lg:w-7"
           >
             <ChevronLeft size={14} aria-hidden="true" />
           </button>
           <button
             type="button"
             aria-label="Next month"
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary lg:h-7 lg:w-7"
           >
             <ChevronRight size={14} aria-hidden="true" />
           </button>
@@ -391,7 +391,7 @@ export function Events() {
               <a
                 href="#all-events"
                 onClick={(e) => e.preventDefault()}
-                className="rounded-lg px-2 py-1 text-sm font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary-light hover:text-primary"
+                className="rounded-lg px-3 py-2.5 text-sm font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary-light hover:text-primary lg:px-2 lg:py-1"
               >
                 View All Events
               </a>

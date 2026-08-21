@@ -50,12 +50,12 @@ export function AttendanceChart({
 
   return (
     <div
-      className="relative inline-flex items-center justify-center"
-      style={{ width: size, height: size }}
+      className="relative inline-flex w-full items-center justify-center"
+      style={{ maxWidth: size }}
       role="img"
       aria-label={`Overall attendance ${percentage} percent`}
     >
-      <svg width={size} height={size} viewBox={`0 0 ${SIZE} ${SIZE}`} className="-rotate-90">
+      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="h-auto w-full -rotate-90">
         <circle
           cx={SIZE / 2}
           cy={SIZE / 2}

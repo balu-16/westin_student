@@ -71,7 +71,7 @@ function DownloadAction({ url }: { url?: string | null }) {
         onClick={() => {
           if (url) window.open(url, '_blank', 'noopener,noreferrer')
         }}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary hover:text-white"
+        className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary hover:text-white lg:min-h-0"
       >
         <Download size={13} aria-hidden="true" />
         Download
@@ -79,7 +79,7 @@ function DownloadAction({ url }: { url?: string | null }) {
       <button
         type="button"
         aria-label="More actions"
-        className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-soft transition-colors duration-200 hover:bg-primary-light hover:text-primary-dark"
+        className="flex h-10 w-10 items-center justify-center rounded-lg text-ink-soft transition-colors duration-200 hover:bg-primary-light hover:text-primary-dark lg:h-7 lg:w-7"
       >
         <MoreVertical size={15} aria-hidden="true" />
       </button>
@@ -256,7 +256,7 @@ export function StudyMaterials() {
                 type="button"
                 onClick={() => scrollFolders(1)}
                 aria-label="Scroll to more subjects"
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-line bg-white text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary"
+                className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary lg:h-9 lg:w-9"
               >
                 <ChevronRight size={16} aria-hidden="true" />
               </button>
@@ -309,7 +309,7 @@ export function StudyMaterials() {
                   aria-label="Sort materials"
                   value={sort}
                   onChange={(e) => { setSort(e.target.value); setPage(1) }}
-                  className="h-9 rounded-lg border border-line bg-white px-2.5 text-sm font-medium text-ink focus:border-primary focus:outline-none"
+                  className="h-10 rounded-lg border border-line bg-white px-2.5 text-sm font-medium text-ink focus:border-primary focus:outline-none lg:h-9"
                 >
                   <option value="latest">Latest First</option>
                   <option value="oldest">Oldest First</option>
@@ -404,13 +404,13 @@ export function StudyMaterials() {
                     Showing <strong className="text-ink">{visible}</strong> of <strong className="text-ink">{total}</strong> files
                   </p>
                   <nav aria-label="Pagination" className="flex items-center gap-2">
-                    <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-40">
+                    <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="min-h-[40px] rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-40 lg:min-h-0">
                       ‹ Prev
                     </button>
                     <span className="text-sm text-ink-soft">
                       Page <strong className="text-ink">{page}</strong> of <strong className="text-ink">{totalPages}</strong>
                     </span>
-                    <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-40">
+                    <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="min-h-[40px] rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-ink-soft transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-40">
                       Next ›
                     </button>
                   </nav>

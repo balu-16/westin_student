@@ -16,7 +16,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs font-medium text-ink-soft">{label}</p>
-      <p className="mt-1 rounded-xl border border-line bg-primary-lighter/60 px-4 py-2.5 text-sm font-semibold text-ink">
+      <p className="mt-1 break-words rounded-xl border border-line bg-primary-lighter/60 px-4 py-2.5 text-sm font-semibold text-ink">
         {value}
       </p>
     </div>
@@ -216,7 +216,7 @@ export function Settings() {
             <Field label="Year" value={user?.year ?? ''} />
             <Field label="Overall Attendance" value={`${user?.overallAttendance ?? 0}%`} />
           </div>
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <Button type="submit">Save Changes</Button>
             {saved && (
               <span role="status" className="animate-fade-in text-sm font-medium text-success">
