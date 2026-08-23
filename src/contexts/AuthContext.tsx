@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -16,6 +17,7 @@ import {
   setSession,
   type Session,
 } from '../lib/api'
+import { identifyOneSignalUser, logoutOneSignalUser, subscribeOneSignal } from '../lib/onesignal'
 import type { Student } from '../types'
 
 interface AuthContextValue {
@@ -35,6 +37,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return session ? mapStudentUser(session.user) : null
   })
 
+  // OneSignal: identify on login AND on session restore (page reload) — OneSignal best
+  // practice is to call login(external_id) on every load once the user is known. When the
+  // browser already granted permission this also silently re-subscribes the device; the
+  // native prompt itself only ever comes from a user gesture, never from here.
+  useEffect(() => {
+    if (!user?.id) return
+    void identifyOneSignalUser({ id: user.id }).catch(() => undefined)
+  }, [user?.id])
+
   const login = useCallback(async (emailOrId: string, password: string) => {
     const session = await apiFetch<Session>('/auth/login', {
       method: 'POST',
@@ -42,6 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
     setSession(session)
     setUser(mapStudentUser(session.user))
+    // Ask for notification permission immediately on successful login, while the login
+    // click's transient activation is still valid. Identify first so the subscription
+    // attaches to THIS account. The post-login banner is the fallback if timing misses.
+    if (session.user?.id) {
+      void (async () => {
+        await identifyOneSignalUser({ id: session.user.id })
+        await subscribeOneSignal()
+      })().catch(() => undefined)
+    }
   }, [])
 
   const logout = useCallback(() => {
@@ -53,6 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ refreshToken: session.refreshToken }),
       }).catch(() => {})
     }
+    // OneSignal: unlink device before clearing session
+    void logoutOneSignalUser().catch(() => undefined)
     clearSession()
     clearApiCache()
     setUser(null)

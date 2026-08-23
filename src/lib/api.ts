@@ -498,6 +498,7 @@ export function mapStudentUser(user: ApiUser): Student {
   const name = user.name ?? user.firstName ?? user.email
   const year = typeof user.year === 'number' ? (YEAR_LABELS[user.year] ?? `${user.year}th Year`) : ''
   return {
+    id: user.id,
     name,
     firstName: user.firstName ?? name.split(' ')[0],
     department: user.department ?? '',
@@ -507,6 +508,20 @@ export function mapStudentUser(user: ApiUser): Student {
     overallAttendance: Number(user.overallAttendance ?? 0) || 0,
     avatarUrl: (user as any).avatarUrl ?? null,
   }
+}
+
+/** In-app notification inbox item (admin-sent, addressed to this student). */
+export interface NotificationItem {
+  id: string
+  title: string
+  body: string
+  createdAt: string
+  readAt: string | null
+}
+
+export interface MyNotificationsPayload {
+  items: NotificationItem[]
+  unread: number
 }
 
 /** Donut segments for the dashboard attendance overview. */

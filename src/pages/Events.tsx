@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import {
   Bell,
@@ -22,6 +22,7 @@ import { Button } from '../components/Button'
 import { SkeletonRows } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import { formatDateLabel, parseDateParts, useApi, type ApiEvent, type EventsPayload } from '../lib/api'
+import { getOneSignalState, subscribeOneSignal } from '../lib/onesignal'
 import { cx } from '../utils'
 import type { DashboardLayoutContext } from '../layouts/DashboardLayout'
 
@@ -268,6 +269,19 @@ function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
 export function Events() {
   const { openMenu } = useOutletContext<DashboardLayoutContext>()
   const { data, error, loading, reload } = useApi<EventsPayload>('/events')
+  // Real push opt-in state for the reminder card button (click handler → prompt allowed)
+  const [notifState, setNotifState] = useState<'idle' | 'busy' | 'on' | 'blocked'>('idle')
+
+  const handleEnableNotifications = async () => {
+    setNotifState('busy')
+    const ok = await subscribeOneSignal()
+    if (ok) {
+      setNotifState('on')
+      return
+    }
+    const state = await getOneSignalState()
+    setNotifState(state.permissionNative === 'denied' ? 'blocked' : 'idle')
+  }
 
   const pending = loading && !data
   const failed = error && !data
@@ -468,9 +482,19 @@ export function Events() {
                 <p className="mt-1 text-sm leading-relaxed text-ink-soft">
                   Turn on notifications to get updates about new events.
                 </p>
-                <Button size="sm" className="mt-3.5">
-                  Enable Notifications
+                <Button
+                  size="sm"
+                  className="mt-3.5"
+                  onClick={() => void handleEnableNotifications()}
+                  disabled={notifState === 'busy' || notifState === 'on'}
+                >
+                  {notifState === 'busy' ? 'Enabling…' : notifState === 'on' ? 'Enabled ✓' : 'Enable Notifications'}
                 </Button>
+                {notifState === 'blocked' && (
+                  <p role="alert" className="mt-2 text-xs font-medium text-danger">
+                    Blocked in browser — click the lock icon in the address bar → Notifications → Allow → Reload.
+                  </p>
+                )}
               </div>
             </div>
           </Card>

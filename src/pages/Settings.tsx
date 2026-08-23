@@ -9,6 +9,7 @@ import { Skeleton, SkeletonRows } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import { Avatar } from '../components/Avatar'
 import { apiFetch, uploadBytes, useApi, type SettingsPayload } from '../lib/api'
+import { getOneSignalState, subscribeOneSignal, unsubscribeOneSignal } from '../lib/onesignal'
 import { useAuth } from '../contexts/AuthContext'
 import type { DashboardLayoutContext } from '../layouts/DashboardLayout'
 
@@ -43,16 +44,47 @@ export function Settings() {
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [applied, setApplied] = useState(false)
+  const [pushBlocked, setPushBlocked] = useState(false)
 
-  // Apply the persisted settings once they arrive from the API.
+  // Apply the persisted settings once they arrive from the API. Push is NOT taken from
+  // the stored preference — the live OneSignal subscription state below is the truth.
   useEffect(() => {
     if (!settings || applied) return
-    setPushEnabled(settings.push)
     setEmailEnabled(settings.email)
     setAnnouncementsOn(settings.announcements)
     setAssignmentReminders(settings.reminders)
     setApplied(true)
   }, [settings, applied])
+
+  // Reflect the real push subscription state on mount (subscribed ⇒ ON).
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const state = await getOneSignalState()
+      if (!cancelled) setPushEnabled(state.optedIn && state.permission)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Toggle wires the real browser subscription (subscribe prompts for permission —
+  // this is a click handler, so the native prompt is allowed).
+  const handlePushToggle = async (next: boolean) => {
+    setPushEnabled(next)
+    if (next) {
+      const ok = await subscribeOneSignal()
+      if (!ok) {
+        setPushEnabled(false)
+        setPushBlocked(true)
+      } else {
+        setPushBlocked(false)
+      }
+    } else {
+      setPushBlocked(false)
+      await unsubscribeOneSignal()
+    }
+  }
 
   const handleSave = async (e: FormEvent) => {
     e.preventDefault()
@@ -239,9 +271,9 @@ export function Settings() {
           <div className="divide-y divide-line">
             <Toggle
               label="Push notifications"
-              description="Receive alerts on your device."
+              description="Receive alerts on this device. Asks for browser permission when turned on."
               checked={pushEnabled}
-              onChange={setPushEnabled}
+              onChange={(next) => void handlePushToggle(next)}
             />
             <Toggle
               label="Email notifications"
@@ -262,6 +294,11 @@ export function Settings() {
               onChange={setAssignmentReminders}
             />
           </div>
+          {pushBlocked && (
+            <p role="alert" className="mt-3 text-xs font-medium text-danger">
+              Browser blocked notifications — click the lock icon in the address bar → Notifications → Allow → Reload.
+            </p>
+          )}
         </Card>
 
         <Card>

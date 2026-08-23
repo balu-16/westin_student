@@ -42,6 +42,8 @@ export interface QuickLinkItem {
 }
 
 export interface Student {
+  /** API user id — powers OneSignal push identity (student_<id>); may lag profile refresh */
+  id?: string
   name: string
   firstName: string
   department: string
