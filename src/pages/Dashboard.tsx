@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import {
-  Bell,
   CalendarDays,
   ChartNoAxesColumnIncreasing,
   FileText,
@@ -20,7 +19,6 @@ import { SectionCard } from '../components/Card'
 import { Skeleton, SkeletonCards, SkeletonRows } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import {
-  apiFetch,
   attendanceBreakdownFrom,
   formatDateLabel,
   mapClassSession,
@@ -28,9 +26,7 @@ import {
   useApi,
   type AttendancePayload,
   type DashboardPayload,
-  type MyNotificationsPayload,
 } from '../lib/api'
-import { cx, timeAgo } from '../utils'
 import { useAuth } from '../contexts/AuthContext'
 import type { Announcement, AttendanceBreakdown, QuickLinkItem } from '../types'
 import type { DashboardLayoutContext } from '../layouts/DashboardLayout'
@@ -52,13 +48,6 @@ export function Dashboard() {
     loading: attendanceLoading,
     reload: attendanceReload,
   } = useApi<AttendancePayload>(`/attendance/my?month=${toMonthString(new Date())}`)
-
-  // Admin-sent notifications addressed to this student (in-app inbox; the bell
-  // in the header shows the same data with read/unread interactions).
-  const {
-    data: notifications,
-    reload: reloadNotifications,
-  } = useApi<MyNotificationsPayload>('/notifications/my?limit=4')
 
   const dashPending = loading && !dashboard
   const dashFailed = error && !dashboard
@@ -188,43 +177,6 @@ export function Dashboard() {
               )}
             </SectionCard>
           </div>
-
-          {/* Admin notifications */}
-          {(notifications?.items?.length ?? 0) > 0 && (
-            <SectionCard
-              title="Notifications"
-              icon={<Bell size={18} className="text-primary" aria-hidden="true" />}
-            >
-              <ul className="divide-y divide-line/60">
-                {notifications!.items.map((n) => {
-                  const isUnread = !n.readAt
-                  return (
-                    <li key={n.id}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void apiFetch(`/notifications/my/${n.id}/read`, { method: 'PUT' }).finally(() => void reloadNotifications())
-                        }}
-                        className={cx(
-                          'flex w-full items-baseline justify-between gap-3 px-1 py-2.5 text-left transition-colors',
-                          isUnread ? 'hover:bg-primary-lighter/40' : 'opacity-80 hover:opacity-100',
-                        )}
-                      >
-                        <span className="min-w-0">
-                          <span className="flex items-center gap-1.5">
-                            {isUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />}
-                            <span className={cx('truncate text-sm', isUnread ? 'font-semibold text-ink' : 'font-medium text-ink')}>{n.title}</span>
-                          </span>
-                          <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-ink-soft">{n.body}</span>
-                        </span>
-                        <span className="shrink-0 text-[11px] text-ink-soft">{timeAgo(n.createdAt)}</span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            </SectionCard>
-          )}
 
           {/* Announcements + Quick links */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">

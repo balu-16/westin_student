@@ -47,19 +47,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user?.id])
 
   const login = useCallback(async (emailOrId: string, password: string) => {
+    // Fire the permission prompt from the click's own gesture window, in parallel
+    // with the login request: browsers only allow the native prompt within a few
+    // seconds of a click, so a slow login API would otherwise block it. The new
+    // subscription stays anonymous until identifyOneSignalUser() re-attaches it
+    // to this account right after login succeeds.
+    const subscribeAttempt = subscribeOneSignal().catch(() => false)
     const session = await apiFetch<Session>('/auth/login', {
       method: 'POST',
       body: { identifier: emailOrId, password },
     })
     setSession(session)
     setUser(mapStudentUser(session.user))
-    // Ask for notification permission immediately on successful login, while the login
-    // click's transient activation is still valid. Identify first so the subscription
-    // attaches to THIS account. The post-login banner is the fallback if timing misses.
+    // Identify (re-attaching the just-created subscription to THIS account) and
+    // settle the parallel subscribe. The post-login banner is the fallback if
+    // the prompt was blocked or dismissed.
     if (session.user?.id) {
       void (async () => {
         await identifyOneSignalUser({ id: session.user.id })
-        await subscribeOneSignal()
+        await subscribeAttempt
       })().catch(() => undefined)
     }
   }, [])

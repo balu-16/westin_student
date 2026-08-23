@@ -510,20 +510,6 @@ export function mapStudentUser(user: ApiUser): Student {
   }
 }
 
-/** In-app notification inbox item (admin-sent, addressed to this student). */
-export interface NotificationItem {
-  id: string
-  title: string
-  body: string
-  createdAt: string
-  readAt: string | null
-}
-
-export interface MyNotificationsPayload {
-  items: NotificationItem[]
-  unread: number
-}
-
 /** Donut segments for the dashboard attendance overview. */
 export function attendanceBreakdownFrom(payload: AttendancePayload | null): AttendanceBreakdown[] {
   const total = payload?.summary?.total ?? 0

@@ -3,7 +3,6 @@ import { CalendarDays, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useOutletContext } from 'react-router-dom'
 import { todayDateLabel } from '../lib/api'
 import { useAuth } from '../contexts/AuthContext'
-import { NotificationsMenu } from './NotificationsMenu'
 import { cx } from '../utils'
 import type { DashboardLayoutContext } from '../layouts/DashboardLayout'
 
@@ -79,7 +78,6 @@ export function Header({
 
       {actions ?? (
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <NotificationsMenu />
           <div className="flex h-9 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-xs font-medium text-ink-soft sm:h-10 sm:gap-2 sm:px-4 sm:text-sm">
             <CalendarDays size={14} className="text-primary sm:h-4 sm:w-4" aria-hidden="true" />
             <span className="hidden sm:inline">{todayDateLabel()}</span>
