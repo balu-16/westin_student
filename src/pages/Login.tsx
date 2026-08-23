@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import { Button } from '../components/Button'
 import { FallingIcons, HotelScene } from '../components/HotelScene'
+import { InstallPwaBanner } from '../components/InstallPwaBanner'
 import westinLogoAvif from '../assets/images/westin-logo.avif'
 import westinLogoPng from '../assets/images/westin-logo.png'
 import { useAuth } from '../contexts/AuthContext'
@@ -203,8 +204,16 @@ export function Login() {
 
             <p className="mt-6 text-center text-sm text-ink-soft">
               Don&apos;t have an account?{' '}
-              <span className="font-semibold text-primary-dark">Contact your college administration</span>
+              <a href="mailto:balarakeshg@gmail.com" className="font-semibold text-primary-dark hover:text-primary">
+                Contact your college administration
+              </a>
             </p>
+          </div>
+
+          {/* iPhone users must install the PWA before they can ever get push —
+              guide them right at the door, before they log in. */}
+          <div className="mt-4">
+            <InstallPwaBanner />
           </div>
         </div>
       </div>

@@ -17,7 +17,7 @@ import {
   setSession,
   type Session,
 } from '../lib/api'
-import { identifyOneSignalUser, logoutOneSignalUser, subscribeOneSignal } from '../lib/onesignal'
+import { identifyOneSignalUser, logoutOneSignalUser } from '../lib/onesignal'
 import type { Student } from '../types'
 
 interface AuthContextValue {
@@ -38,36 +38,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   // OneSignal: identify on login AND on session restore (page reload) — OneSignal best
-  // practice is to call login(external_id) on every load once the user is known. When the
-  // browser already granted permission this also silently re-subscribes the device; the
-  // native prompt itself only ever comes from a user gesture, never from here.
+  // practice is to call login(external_id) on every load once the user is known. This
+  // never prompts and never opts in: permission is only requested post-login via the
+  // banner / Settings toggle, so the subscription is always created under the
+  // logged-in student, never anonymously.
   useEffect(() => {
     if (!user?.id) return
     void identifyOneSignalUser({ id: user.id }).catch(() => undefined)
   }, [user?.id])
 
   const login = useCallback(async (emailOrId: string, password: string) => {
-    // Fire the permission prompt from the click's own gesture window, in parallel
-    // with the login request: browsers only allow the native prompt within a few
-    // seconds of a click, so a slow login API would otherwise block it. The new
-    // subscription stays anonymous until identifyOneSignalUser() re-attaches it
-    // to this account right after login succeeds.
-    const subscribeAttempt = subscribeOneSignal().catch(() => false)
     const session = await apiFetch<Session>('/auth/login', {
       method: 'POST',
       body: { identifier: emailOrId, password },
     })
+    // No permission prompt at login — prompting before the identity is known created
+    // anonymous subscriptions that raced the identify in the effect above (fired by
+    // setUser). The dashboard banner then asks (per account) to enable notifications.
     setSession(session)
     setUser(mapStudentUser(session.user))
-    // Identify (re-attaching the just-created subscription to THIS account) and
-    // settle the parallel subscribe. The post-login banner is the fallback if
-    // the prompt was blocked or dismissed.
-    if (session.user?.id) {
-      void (async () => {
-        await identifyOneSignalUser({ id: session.user.id })
-        await subscribeAttempt
-      })().catch(() => undefined)
-    }
   }, [])
 
   const logout = useCallback(() => {

@@ -3,11 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
       content="Student Portal — your academic life, simplified. Timetable, attendance, assignments and announcements in one place."
     />
+    <meta name="theme-color" content="#3ba7f2" />
+    <!-- iOS home-screen web app: required for web push on iPhone (iOS 16.4+, installed via Share → Add to Home Screen) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Westin" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,8 +24,8 @@
     <title>Student Portal — Your Academic Life, Simplified</title>
 
     <!-- OneSignal Web Push (Custom Code setup — no auto-prompt; permission is requested
-         from code right after login, see src/lib/onesignal.ts). App is separate from the
-         faculty portal's because origins cannot share a OneSignal app. -->
+         only AFTER login via the post-login banner / Settings toggle, see src/lib/onesignal.ts).
+         App is separate from the faculty portal's because origins cannot share a OneSignal app. -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];

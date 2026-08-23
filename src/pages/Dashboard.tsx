@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { Header } from '../components/Header'
 import { PushPermissionBanner } from '../components/PushPermissionBanner'
+import { InstallPwaBanner } from '../components/InstallPwaBanner'
 import { StatCard } from '../components/StatCard'
 import { TimetableCard } from '../components/TimetableCard'
 import { AttendanceChart, AttendanceLegend } from '../components/AttendanceChart'
@@ -33,9 +34,9 @@ import type { DashboardLayoutContext } from '../layouts/DashboardLayout'
 
 const quickLinks: QuickLinkItem[] = [
   { id: 'ql-1', label: 'Study Materials', to: '/materials', icon: 'book' },
-  { id: 'ql-2', label: 'Assignments', to: '/timetable', icon: 'clipboard' },
-  { id: 'ql-3', label: 'Exam Schedule', to: '/timetable', icon: 'calendar' },
-  { id: 'ql-4', label: 'Notice Board', to: '/events', icon: 'bell' },
+  { id: 'ql-2', label: 'Timetable', to: '/timetable', icon: 'calendar' },
+  { id: 'ql-3', label: 'Attendance', to: '/attendance', icon: 'clipboard' },
+  { id: 'ql-4', label: 'Events', to: '/events', icon: 'bell' },
 ]
 
 export function Dashboard() {
@@ -83,6 +84,7 @@ export function Dashboard() {
       />
 
       <PushPermissionBanner />
+      <InstallPwaBanner />
 
       {dashFailed ? (
         <ErrorState message={error ?? undefined} onRetry={reload} />
@@ -184,8 +186,6 @@ export function Dashboard() {
               <SectionCard
                 title="Announcements"
                 icon={<Megaphone size={18} className="text-primary" aria-hidden="true" />}
-                actionLabel="View All"
-                actionTo="/timetable"
                 className="lg:col-span-3"
               >
                 <SkeletonRows rows={3} />
@@ -194,8 +194,6 @@ export function Dashboard() {
               <SectionCard
                 title="Announcements"
                 icon={<Megaphone size={18} className="text-primary" aria-hidden="true" />}
-                actionLabel="View All"
-                actionTo="/timetable"
                 className="lg:col-span-3"
               >
                 <ul className="relative">

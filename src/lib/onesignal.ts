@@ -11,20 +11,35 @@ import { apiFetch, getSession } from './api';
  * The backend imports an identical helper from
  * westin-api/src/modules/notifications/notifications.service.ts; they must stay in sync.
  *
- * Permission model:
+ * Permission model (identity-first, prompt only AFTER login):
  * - OneSignal.init() in index.html does NOT auto-prompt (prompts: [], notifyButton: false,
  *   autoResubscribe: false).
- * - The native permission prompt is requested IMMEDIATELY AFTER A SUCCESSFUL LOGIN, from
- *   the login click's transient-activation window (browsers require a gesture; supported
- *   browsers are Chrome/Edge/Firefox — Safari/iOS is out of scope).
- * - Fallbacks: the post-login banner button and the Settings toggle both call
- *   subscribeOneSignal() from a direct click handler.
+ * - We never prompt before or during login. AuthContext runs identifyOneSignalUser() right
+ *   after login succeeds, so login(external_id) ALWAYS precedes any optIn() — the
+ *   subscription is created directly under the logged-in student, never anonymously.
+ * - The ONLY permission prompt path is the post-login PushPermissionBanner Enable button
+ *   (and the Settings toggle) — direct click handlers calling subscribeOneSignal().
  * - Never prompt on page load or session restore (no gesture available there).
- * - Browsers grant the Notification permission ONCE per profile. On later logins
- *   identifyOneSignalUser() silently re-subscribes if permission is 'granted' but the
- *   device is not opted in.
- * - Identity operations (logout/login/optIn) are serialized so a pending logout() can
- *   never resolve after the next login() and unlink the new user.
+ * - Browsers grant the Notification permission ONCE per profile; it can never be re-prompted.
+ *   When permission is already granted, identifyOneSignalUser() silently (re)creates this
+ *   browser's single subscription via optIn() — no prompt, no gesture needed — so whoever
+ *   logged in LAST is always genuinely subscribed (shared-browser second account, iOS
+ *   subscription churn). The banner only ever prompts when permission is 'default'.
+ *   On a shared browser only the account that logged in LAST receives pushes — inherent
+ *   web-push limit, not fixable.
+ * - iOS: supported ONLY inside the Home Screen installed web app (iOS 16.4+, installed via
+ *   Share → Add to Home Screen) — never in a browser tab. lib/pwa.ts gates the push UI;
+ *   InstallPwaBanner guides iPhone users through the install.
+ * - Logging OUT does not touch OneSignal: the device keeps receiving that student's pushes
+ *   until a DIFFERENT account logs in (identifyOneSignalUser then moves the subscription).
+ *   Severing the subscription on logout is what previously made subscribed students show
+ *   up as "inactive / not subscribed" in OneSignal while their device sat fully capable.
+ * - The thank-you push fires ONLY from an explicit Enable gesture (banner / Settings) —
+ *   never from identify or silent heals — exactly once per USER via the locked
+ *   sendSubscriptionThanksOnce(); the backend additionally enforces once-per-user in
+ *   Postgres (notification_thanks).
+ * - Identity operations (logout/login) are serialized so a pending account-switch
+ *   logout() can never resolve after the next login() and unlink the new user.
  */
 
 /** Single shared helper — call this everywhere an external_id is needed. */
@@ -89,6 +104,11 @@ function writeLastExternalId(id: string | null): void {
   } catch {}
 }
 
+// The student most recently identified on this browser — set by identifyOneSignalUser().
+// sendSubscriptionThanksOnce() uses it so the thank-you is addressed to the account that
+// actually owns the subscription.
+let currentIdentity: { id: string } | null = null;
+
 // Identity ops must never interleave: a logout() still in flight when the next
 // login(externalId) runs would unlink the freshly identified user. Chain every
 // identity mutation.
@@ -97,6 +117,13 @@ function enqueueIdentity<T>(fn: () => Promise<T>): Promise<T> {
   const run = identityChain.then(fn, fn);
   identityChain = run.catch(() => undefined);
   return run;
+}
+
+/** Resolves once the current identify/switch — including the silent subscription heal —
+ * has settled. The post-login banner awaits this so it never reads a pre-heal snapshot
+ * (which would briefly show "not subscribed" for an account that is being re-bound). */
+export function whenIdentitySettled(): Promise<unknown> {
+  return identityChain;
 }
 
 /** Resolve the live OneSignal instance, waiting for the Deferred queue if needed. */
@@ -183,6 +210,11 @@ export async function getOneSignalState(): Promise<PushState> {
   }
 }
 
+// Timestamp of the last explicit Enable gesture (banner / Settings click). The
+// subscription-change watcher only sends the thank-you inside this window, so silent
+// heals from identifyOneSignalUser() never trigger one.
+let lastSubscribeGestureAt = 0;
+
 /**
  * Subscribe this browser for push.
  * MUST be called from a user gesture (button click / login click) — otherwise the
@@ -190,6 +222,7 @@ export async function getOneSignalState(): Promise<PushState> {
  * false if blocked/denied/unsupported/already-subscribed.
  */
 export async function subscribeOneSignal(): Promise<boolean> {
+  lastSubscribeGestureAt = Date.now();
   try {
     const state = await getOneSignalState();
     if (!state.isSupported) return false;
@@ -238,8 +271,15 @@ export async function unsubscribeOneSignal(): Promise<void> {
 /**
  * Identify the current student on this browser — call on EVERY login and on session
  * restore (page reload with an existing session), per OneSignal best practice.
- * If the browser permission is already 'granted' but the device is not opted in,
- * this silently re-subscribes; it never requests permission itself.
+ * Implements the shared-browser requirement: every login where the externalId
+ * changes calls logout() before login(newExternalId), not only on explicit sign-out.
+ *
+ * It never requests permission. If permission is ALREADY granted but this browser has
+ * no live subscription (second account on a shared browser — the native prompt can
+ * never re-appear, iOS/server-side subscription churn), it silently opts back in
+ * under the identified student — login() strictly before optIn(), no anonymous
+ * window. When permission was never granted, the post-login banner asks;
+ * subscribeOneSignal() (banner Enable / Settings toggle) then opts in from a click.
  */
 export async function identifyOneSignalUser(user: { id: string }): Promise<void> {
   ensureFirstSubscriptionWatcher();
@@ -263,24 +303,19 @@ export async function identifyOneSignalUser(user: { id: string }): Promise<void>
           }
         } catch {}
         writeLastExternalId(nextId);
+        currentIdentity = user;
 
-        // Permission already granted ⇒ optIn() needs no gesture and shows no prompt.
+        // Heal: with permission already granted, (re)create this browser's subscription
+        // under the just-identified student. optIn() is silent here — no prompt is shown
+        // for an already-granted permission, so no user gesture is required. This never
+        // sends the thank-you: that fires only from an explicit Enable gesture.
         try {
           const native =
-            os.Notifications?.permissionNative ??
-            (typeof Notification !== 'undefined' ? (Notification.permission as string | undefined) : undefined);
-          if (native === 'granted' && os.User?.PushSubscription && !os.User.PushSubscription.optedIn) {
+            (os.Notifications?.permissionNative as string | undefined) ||
+            (typeof Notification !== 'undefined' ? Notification.permission : 'default');
+          if (native === 'granted' && !os.User.PushSubscription.optedIn) {
             await os.User.PushSubscription.optIn();
           }
-        } catch {}
-
-        // Thank the user once when this browser is (or just became) subscribed. This
-        // catches the login-time permission grant — with the parallel subscribe the
-        // subscription can land before the session is stored, and this retry fires
-        // right after login()/setSession complete — and heals browsers that
-        // subscribed before the thank-you feature existed.
-        try {
-          if (os.User?.PushSubscription?.optedIn) void sendSubscriptionThanksOnce();
         } catch {}
       }),
     );
@@ -289,19 +324,15 @@ export async function identifyOneSignalUser(user: { id: string }): Promise<void>
   }
 }
 
-/** Unlink this device from the current identity. Call before clearing session on logout.
- * Keeps browser permission and the subscription itself — the next login() re-attaches it. */
+/** Called on app logout — intentionally does NOT call OneSignal logout(). Severing the
+ * device subscription here is what made subscribed students show up as "inactive /
+ * not subscribed" in OneSignal while their device was fully capable: the user record
+ * lost its only subscription the moment they signed out, so every later send errored.
+ * The device keeps receiving the last-login student's pushes until a DIFFERENT account
+ * logs in — identifyOneSignalUser() then moves the subscription via logout()+login().
+ * Kept as a hook so AuthContext (and any future policy change) has one seam. */
 export async function logoutOneSignalUser(): Promise<void> {
-  try {
-    await enqueueIdentity(() =>
-      withOneSignal(async (os) => {
-        try {
-          await os.logout();
-        } catch {}
-        writeLastExternalId(null);
-      }),
-    );
-  } catch {}
+  currentIdentity = null;
 }
 
 /** Best-effort: true if the OneSignal page SDK script is present. */
@@ -315,36 +346,56 @@ export function isOneSignalSupported(): boolean {
 
 // ---------- first-subscription thank-you ----------
 
-// Exactly ONE thank-you push per browser (localStorage flag). It is sent the
-// moment this browser is confirmed subscribed — permission granted at login
-// (the common path), the banner / first Settings enable, or the subscription
-// change event — whichever lands first. Settings off→on toggles never re-send
-// (the flag survives them). The backend sends the push (POST
-// /notifications/thanks); it is not recorded in the admin History.
-const THANKED_KEY = 'westin:onesignal:thanked';
+// Exactly ONE thank-you push per USER (localStorage flag keyed by external id), sent
+// ONLY from an explicit Enable gesture — banner / Settings click via subscribeOneSignal()
+// (both its already-subscribed early return and its post-optIn check), or the
+// subscription-change watcher while that gesture is still "in flight" (<60s window) to
+// catch subscriptions that finish creating asynchronously. identifyOneSignalUser()'s
+// silent heals never thank: on a shared browser that thanked every account that merely
+// logged in, so one device displayed two "Thanks for subscribing" pushes.
+// All concurrent triggers share ONE in-flight POST, and the backend additionally refuses
+// to send twice for the same user (notification_thanks table) — duplicates are
+// impossible even across tabs. Settings off→on toggles never re-send (flag survives).
+const THANKED_KEY_PREFIX = 'student-portal.onesignal:thanked:';
+const LEGACY_THANKED_KEY = 'westin:onesignal:thanked'; // old per-browser flag — migrate, never re-thank
 
-export async function sendSubscriptionThanksOnce(): Promise<void> {
-  try {
-    if (localStorage.getItem(THANKED_KEY)) return;
-  } catch {
-    return;
-  }
-  // The login flow subscribes in parallel with the verify request, so the
-  // subscription can exist before the session is stored. Skip without setting
-  // the flag — identifyOneSignalUser() retries right after the session lands.
-  if (!getSession()) return;
-  try {
-    localStorage.setItem(THANKED_KEY, String(Date.now()));
-  } catch {
-    return;
-  }
-  try {
-    await apiFetch('/notifications/thanks', { method: 'POST' });
-  } catch {
+let thanksInFlight: Promise<void> | null = null;
+
+export function sendSubscriptionThanksOnce(): Promise<void> {
+  if (thanksInFlight) return thanksInFlight;
+  const attempt = (async () => {
+    // Never thank an anonymous subscription — wait for identifyOneSignalUser().
+    const user = currentIdentity;
+    if (!user) return;
+    if (!getSession()) return; // session not stored yet — the identify retry covers this
+    const flagKey = THANKED_KEY_PREFIX + getOneSignalExternalId(user);
     try {
-      localStorage.removeItem(THANKED_KEY); // allow a later retry
-    } catch {}
-  }
+      // Browsers already thanked under the old per-browser flag stay thanked.
+      if (localStorage.getItem(LEGACY_THANKED_KEY)) {
+        localStorage.setItem(flagKey, 'legacy');
+        return;
+      }
+      if (localStorage.getItem(flagKey)) return;
+    } catch {
+      return;
+    }
+    try {
+      localStorage.setItem(flagKey, String(Date.now()));
+    } catch {
+      return;
+    }
+    try {
+      await apiFetch('/notifications/thanks', { method: 'POST' });
+    } catch {
+      try {
+        localStorage.removeItem(flagKey); // allow a later retry (backend guard still applies)
+      } catch {}
+    }
+  })();
+  thanksInFlight = attempt.finally(() => {
+    thanksInFlight = null;
+  });
+  return thanksInFlight;
 }
 
 let firstSubscriptionWatched = false;
@@ -359,7 +410,10 @@ export function ensureFirstSubscriptionWatcher(): void {
       };
       const wasNone = !ev.previous?.id && !ev.previous?.token;
       const hasNow = !!ev.current?.id && !!ev.current?.token;
-      if (!wasNone || !hasNow) return;
+      // Thank only subscriptions born from an explicit Enable gesture — the silent
+      // heal in identifyOneSignalUser() also fires this event and must not thank.
+      const fromGesture = Date.now() - lastSubscribeGestureAt < 60_000;
+      if (!wasNone || !hasNow || !fromGesture) return;
       void sendSubscriptionThanksOnce();
     });
   }).catch(() => undefined);
