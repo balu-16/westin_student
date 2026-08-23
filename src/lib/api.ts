@@ -379,6 +379,7 @@ export interface ApiEvent {
   endDate: string | null
   time: string
   location: string
+  description: string | null
   isLive: boolean
   createdBy: string
 }

@@ -4,9 +4,7 @@ import {
   ChevronRight,
   Download,
   FileText,
-  Filter,
   FolderOpen,
-  MoreVertical,
   Presentation,
   Search,
   Sheet,
@@ -65,25 +63,18 @@ function FileTypeBadge({ type }: { type: FileType }) {
 
 function DownloadAction({ url }: { url?: string | null }) {
   return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={() => {
-          if (url) window.open(url, '_blank', 'noopener,noreferrer')
-        }}
-        className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary hover:text-white lg:min-h-0"
-      >
-        <Download size={13} aria-hidden="true" />
-        Download
-      </button>
-      <button
-        type="button"
-        aria-label="More actions"
-        className="flex h-10 w-10 items-center justify-center rounded-lg text-ink-soft transition-colors duration-200 hover:bg-primary-light hover:text-primary-dark lg:h-7 lg:w-7"
-      >
-        <MoreVertical size={15} aria-hidden="true" />
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={() => {
+        if (url) window.open(url, '_blank', 'noopener,noreferrer')
+      }}
+      disabled={!url}
+      title={url ? 'Download file' : 'File unavailable'}
+      className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-primary/50 px-3 py-1.5 text-xs font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-50 lg:min-h-0"
+    >
+      <Download size={13} aria-hidden="true" />
+      Download
+    </button>
   )
 }
 
@@ -177,13 +168,6 @@ export function StudyMaterials() {
                 className="h-10 w-44 rounded-xl border border-line bg-white pl-9 pr-3 text-sm text-ink placeholder:text-ink-soft/60 transition-colors duration-200 focus:border-primary focus:outline-none sm:w-56"
               />
             </div>
-            <button
-              type="button"
-              aria-label="Filter materials"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-white text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary"
-            >
-              <Filter size={16} aria-hidden="true" />
-            </button>
           </div>
         }
       />

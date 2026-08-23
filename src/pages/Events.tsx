@@ -7,18 +7,19 @@ import {
   ChevronRight,
   Clock,
   MapPin,
-  Megaphone,
   Music,
   PartyPopper,
   Presentation,
   Sparkles,
   Trophy,
   Wrench,
+  X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Header } from '../components/Header'
 import { Card } from '../components/Card'
 import { Button } from '../components/Button'
+import { Modal } from '../components/Modal'
 import { SkeletonRows } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import { formatDateLabel, parseDateParts, useApi, type ApiEvent, type EventsPayload } from '../lib/api'
@@ -73,7 +74,7 @@ function toUpcomingView(event: ApiEvent): UpcomingEventView {
   }
 }
 
-function FeaturedBanner({ event }: { event: ApiEvent }) {
+function FeaturedBanner({ event, onViewDetails }: { event: ApiEvent; onViewDetails: () => void }) {
   const startDate = formatDateLabel(event.startDate)
   const endDate = event.endDate ? formatDateLabel(event.endDate) : startDate
   return (
@@ -121,62 +122,79 @@ function FeaturedBanner({ event }: { event: ApiEvent }) {
           </span>
         </div>
 
-        <Button className="mt-6">View Details</Button>
+        <Button className="mt-6" onClick={onViewDetails}>
+          View Details
+        </Button>
       </div>
     </div>
   )
 }
 
-function UpcomingRow({ event }: { event: UpcomingEventView }) {
+function UpcomingRow({ event, onViewDetails }: { event: UpcomingEventView; onViewDetails: () => void }) {
   return (
-    <li className="flex gap-4 border-b border-line py-4 first:pt-0 last:border-0 last:pb-0">
-      {/* Thumbnail */}
-      <div
-        className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-white sm:h-[72px] sm:w-[72px]"
-        style={{ background: `linear-gradient(135deg, ${event.accent}, ${event.accent}B3)` }}
-        aria-hidden="true"
+    <li className="border-b border-line first:pt-0 last:border-0">
+      <button
+        type="button"
+        onClick={onViewDetails}
+        className="flex w-full gap-4 py-4 text-left transition-colors duration-200 hover:bg-primary-lighter/40"
       >
-        <CalendarDays size={26} />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <span
-          className="inline-block rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wide"
-          style={{ backgroundColor: `${event.accent}1A`, color: event.accent }}
+        {/* Thumbnail */}
+        <div
+          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-white sm:h-[72px] sm:w-[72px]"
+          style={{ background: `linear-gradient(135deg, ${event.accent}, ${event.accent}B3)` }}
+          aria-hidden="true"
         >
-          {event.category}
-        </span>
-        <h4 className="mt-1.5 truncate font-semibold text-ink">{event.title}</h4>
-      </div>
+          <CalendarDays size={26} />
+        </div>
 
-      {/* Date box */}
-      <div className="flex w-[72px] shrink-0 flex-col items-center justify-center rounded-2xl border border-line bg-primary-lighter py-2">
-        <span className="text-xl font-bold leading-none text-ink">{event.day}</span>
-        <span className="mt-1 text-[11px] font-semibold leading-none text-primary-dark">
-          {event.month} '{String(event.year).slice(2)}
-        </span>
-        <span className="mt-1 text-[10px] leading-none text-ink-soft">{event.weekday}</span>
-      </div>
+        <div className="min-w-0 flex-1">
+          <span
+            className="inline-block rounded-md px-2 py-0.5 text-[10px] font-bold tracking-wide"
+            style={{ backgroundColor: `${event.accent}1A`, color: event.accent }}
+          >
+            {event.category}
+          </span>
+          <h4 className="mt-1.5 truncate font-semibold text-ink">{event.title}</h4>
+        </div>
+
+        {/* Date box */}
+        <div className="flex w-[72px] shrink-0 flex-col items-center justify-center rounded-2xl border border-line bg-primary-lighter py-2">
+          <span className="text-xl font-bold leading-none text-ink">{event.day}</span>
+          <span className="mt-1 text-[11px] font-semibold leading-none text-primary-dark">
+            {event.month} '{String(event.year).slice(2)}
+          </span>
+          <span className="mt-1 text-[10px] leading-none text-ink-soft">{event.weekday}</span>
+        </div>
+      </button>
     </li>
   )
 }
 
-/** Sun-first calendar grid for the current month, marking live + upcoming events. */
+/** Sun-first calendar grid, marking live + upcoming events. Month is browsable. */
 function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
   const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth()
+  const [cursor, setCursor] = useState(() => ({ year: now.getFullYear(), month: now.getMonth() }))
+  const year = cursor.year
+  const month = cursor.month
   const firstWeekday = new Date(year, month, 1).getDay() // 0 = Sunday
   const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+  const shiftMonth = (delta: number) =>
+    setCursor((c) => {
+      const m = c.month + delta
+      if (m < 0) return { year: c.year - 1, month: 11 }
+      if (m > 11) return { year: c.year + 1, month: 0 }
+      return { ...c, month: m }
+    })
 
   const liveDays = new Set<number>()
   const upcomingDays = new Set<number>()
   for (const event of events) {
     const start = new Date(event.startDate.slice(0, 10) + 'T00:00:00')
     const end = event.endDate ? new Date(event.endDate.slice(0, 10) + 'T00:00:00') : start
-    for (const cursor = new Date(start); cursor <= end && cursor <= new Date(year, month + 1, 0); cursor.setDate(cursor.getDate() + 1)) {
-      if (cursor.getFullYear() === year && cursor.getMonth() === month) {
-        ;(event.isLive ? liveDays : upcomingDays).add(cursor.getDate())
+    for (const day = new Date(start); day <= end && day <= new Date(year, month + 1, 0); day.setDate(day.getDate() + 1)) {
+      if (day.getFullYear() === year && day.getMonth() === month) {
+        ;(event.isLive ? liveDays : upcomingDays).add(day.getDate())
       }
     }
   }
@@ -187,7 +205,9 @@ function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
   ]
 
   const calendarDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-  const currentDay = now.getDate()
+  // "Today" only highlights when actually viewing the current month.
+  const currentDay =
+    year === now.getFullYear() && month === now.getMonth() ? now.getDate() : -1
 
   return (
     <Card>
@@ -199,6 +219,7 @@ function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
           <button
             type="button"
             aria-label="Previous month"
+            onClick={() => shiftMonth(-1)}
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary lg:h-7 lg:w-7"
           >
             <ChevronLeft size={14} aria-hidden="true" />
@@ -206,6 +227,7 @@ function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
           <button
             type="button"
             aria-label="Next month"
+            onClick={() => shiftMonth(1)}
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary lg:h-7 lg:w-7"
           >
             <ChevronRight size={14} aria-hidden="true" />
@@ -271,6 +293,8 @@ export function Events() {
   const { data, error, loading, reload } = useApi<EventsPayload>('/events')
   // Real push opt-in state for the reminder card button (click handler → prompt allowed)
   const [notifState, setNotifState] = useState<'idle' | 'busy' | 'on' | 'blocked'>('idle')
+  const [detailsEvent, setDetailsEvent] = useState<ApiEvent | null>(null)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
   const handleEnableNotifications = async () => {
     setNotifState('busy')
@@ -287,12 +311,12 @@ export function Events() {
   const failed = error && !data
 
   const featured = data?.featured ?? null
-  const upcomingEvents = useMemo<UpcomingEventView[]>(
+  const upcomingEvents = useMemo(
     () =>
       (data?.upcoming ?? [])
         .filter((e) => !featured || e.id !== featured.id)
-        .map(toUpcomingView),
-    [data, featured],
+        .filter((e) => !activeCategory || e.category === activeCategory),
+    [data, featured, activeCategory],
   )
   const eventCategories = useMemo(
     () =>
@@ -312,11 +336,16 @@ export function Events() {
         actions={
           <button
             type="button"
-            aria-label="Event notifications"
-            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary"
+            aria-label="Enable event notifications"
+            title={notifState === 'on' ? 'Notifications enabled' : 'Get notified about new events'}
+            onClick={() => void handleEnableNotifications()}
+            disabled={notifState === 'busy' || notifState === 'on'}
+            className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-white text-ink-soft transition-colors duration-200 hover:border-primary/40 hover:text-primary disabled:pointer-events-none disabled:opacity-60"
           >
             <Bell size={18} aria-hidden="true" />
-            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-primary ring-2 ring-white" />
+            {notifState !== 'on' && (
+              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-primary ring-2 ring-white" />
+            )}
           </button>
         }
       />
@@ -345,26 +374,6 @@ export function Events() {
           {/* Sidebar column */}
           <div className="space-y-6 xl:col-span-3">
             <EventCalendarWidget events={[]} />
-
-            {/* Promo card */}
-            <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-[#4FB0F4] via-[#3BA7F2] to-[#168BE5] p-5 shadow-card">
-              <div
-                aria-hidden="true"
-                className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10"
-              />
-              <div className="relative">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white">
-                  <Megaphone size={18} aria-hidden="true" />
-                </span>
-                <h3 className="mt-3.5 text-base font-bold text-white">Have an event idea?</h3>
-                <p className="mt-1 text-sm leading-relaxed text-white/85">
-                  Let the college community know about your event.
-                </p>
-                <Button variant="white" size="sm" className="mt-4 w-full">
-                  Submit Event Proposal
-                </Button>
-              </div>
-            </div>
 
             {/* Categories */}
             <Card>
@@ -396,25 +405,38 @@ export function Events() {
         {/* Main column */}
         <div className="space-y-6 xl:col-span-7">
           <section aria-label="Current event">
-            {featured && <FeaturedBanner event={featured} />}
+            {featured && <FeaturedBanner event={featured} onViewDetails={() => setDetailsEvent(featured)} />}
           </section>
 
           <Card>
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-base font-semibold text-ink">Upcoming Events</h3>
-              <a
-                href="#all-events"
-                onClick={(e) => e.preventDefault()}
-                className="rounded-lg px-3 py-2.5 text-sm font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary-light hover:text-primary lg:px-2 lg:py-1"
-              >
-                View All Events
-              </a>
+              {activeCategory && (
+                <button
+                  type="button"
+                  onClick={() => setActiveCategory(null)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-xs font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary hover:text-white"
+                >
+                  {(categoryMeta[activeCategory] ?? defaultCategoryMeta).name}
+                  <X size={12} aria-hidden="true" />
+                  <span className="sr-only">Clear category filter</span>
+                </button>
+              )}
             </div>
             <ul>
               {upcomingEvents.map((event) => (
-                <UpcomingRow key={event.id} event={event} />
+                <UpcomingRow
+                  key={event.id}
+                  event={toUpcomingView(event)}
+                  onViewDetails={() => setDetailsEvent(event)}
+                />
               ))}
             </ul>
+            {activeCategory && upcomingEvents.length === 0 && (
+              <p className="py-6 text-center text-sm text-ink-soft">
+                No upcoming {(categoryMeta[activeCategory] ?? defaultCategoryMeta).name} events.
+              </p>
+            )}
           </Card>
         </div>
 
@@ -422,46 +444,39 @@ export function Events() {
         <div className="space-y-6 xl:col-span-3">
           <EventCalendarWidget events={data?.upcoming ?? []} />
 
-          {/* Promo card */}
-          <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-[#4FB0F4] via-[#3BA7F2] to-[#168BE5] p-5 shadow-card">
-            <div
-              aria-hidden="true"
-              className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10"
-            />
-            <div className="relative">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white">
-                <Megaphone size={18} aria-hidden="true" />
-              </span>
-              <h3 className="mt-3.5 text-base font-bold text-white">Have an event idea?</h3>
-              <p className="mt-1 text-sm leading-relaxed text-white/85">
-                Let the college community know about your event.
-              </p>
-              <Button variant="white" size="sm" className="mt-4 w-full">
-                Submit Event Proposal
-              </Button>
-            </div>
-          </div>
-
           {/* Categories */}
           <Card>
             <h3 className="mb-3 text-base font-semibold text-ink">Event Categories</h3>
             <ul className="divide-y divide-line">
               {eventCategories.map((category) => {
                 const Icon = categoryIcons[category.icon]
+                const selected = activeCategory === category.id
                 return (
                   <li key={category.id}>
                     <button
                       type="button"
+                      aria-pressed={selected}
+                      onClick={() => setActiveCategory(selected ? null : category.id)}
                       className="group flex w-full items-center gap-3 py-3 text-left"
                     >
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary-dark transition-colors duration-200 group-hover:bg-primary group-hover:text-white">
+                      <span
+                        className={cx(
+                          'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-200',
+                          selected
+                            ? 'bg-primary text-white'
+                            : 'bg-primary-light text-primary-dark group-hover:bg-primary group-hover:text-white',
+                        )}
+                      >
                         <Icon size={16} aria-hidden="true" />
                       </span>
                       <span className="flex-1 text-sm font-medium text-ink">{category.name}</span>
                       <span className="text-sm font-semibold text-ink-soft">{category.count}</span>
                       <ChevronRight
                         size={15}
-                        className="text-ink-soft/40 transition-colors duration-200 group-hover:text-primary"
+                        className={cx(
+                          'transition-colors duration-200',
+                          selected ? 'text-primary' : 'text-ink-soft/40 group-hover:text-primary',
+                        )}
                         aria-hidden="true"
                       />
                     </button>
@@ -499,8 +514,47 @@ export function Events() {
             </div>
           </Card>
         </div>
-      </div>
+        </div>
       )}
+
+      <Modal
+        open={!!detailsEvent}
+        onClose={() => setDetailsEvent(null)}
+        title={detailsEvent?.title ?? ''}
+        subtitle={detailsEvent ? `${(categoryMeta[detailsEvent.category] ?? defaultCategoryMeta).name} Event` : undefined}
+        footer={
+          <Button variant="secondary" onClick={() => setDetailsEvent(null)}>
+            Close
+          </Button>
+        }
+      >
+        {detailsEvent && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink">
+              <span className="flex items-center gap-2">
+                <CalendarDays size={15} className="text-primary" aria-hidden="true" />
+                {formatDateLabel(detailsEvent.startDate)}
+                {detailsEvent.endDate &&
+                  ` — ${formatDateLabel(detailsEvent.endDate)}`}
+              </span>
+              <span className="flex items-center gap-2">
+                <Clock size={15} className="text-primary" aria-hidden="true" />
+                {detailsEvent.time}
+              </span>
+              <span className="flex items-center gap-2">
+                <MapPin size={15} className="text-primary" aria-hidden="true" />
+                {detailsEvent.location}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-ink">About this event</h3>
+              <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">
+                {detailsEvent.description?.trim() || 'No description provided yet — check back later.'}
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

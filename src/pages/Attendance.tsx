@@ -89,12 +89,7 @@ function SubjectRow({ row }: { row: SubjectAttendanceRow }) {
   return (
     <tr className="border-b border-line/70 transition-colors duration-150 last:border-0 hover:bg-primary-lighter/60">
       <td className="py-3.5 pr-4">
-        <button
-          type="button"
-          className="rounded-md px-1 text-sm font-bold text-primary-dark transition-colors duration-200 hover:text-primary"
-        >
-          {row.code}
-        </button>
+        <span className="px-1 text-sm font-bold text-primary-dark">{row.code}</span>
       </td>
       <td className="py-3.5 pr-4 font-semibold text-ink">{row.subject}</td>
       <td className="py-3.5 pr-4 text-ink-soft">{row.held}</td>
@@ -257,6 +252,31 @@ export function Attendance() {
     { id: 'qs-required', label: 'Required Attendance', value: `${data?.quickStats?.required ?? 75}%` },
   ]
 
+  /** Client-side CSV export of the subject-wise report for the viewed month. */
+  const downloadReport = () => {
+    const cell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
+    const rows = [
+      ['Subject', 'Code', 'Classes Held', 'Attended', 'Absent', 'Percentage'],
+      ...subjectAttendanceRows.map((r) => [
+        r.subject,
+        r.code,
+        r.held,
+        r.attended,
+        r.held - r.attended,
+        `${r.held ? Math.round((r.attended / r.held) * 100) : 0}%`,
+      ]),
+      [],
+      ['Overall', '', summary?.total ?? 0, summary?.present ?? 0, summary?.absent ?? 0, `${summary?.overall ?? 0}%`],
+    ]
+    const csv = rows.map((r) => r.map(cell).join(',')).join('\r\n')
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `attendance-report-${month}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   const semesterOptions = useMemo(() => {
     const y = new Date().getFullYear()
     const yy = (n: number) => String(n % 100).padStart(2, '0')
@@ -418,7 +438,9 @@ export function Attendance() {
                 </h3>
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary-light hover:text-primary lg:px-2 lg:py-1"
+                  onClick={downloadReport}
+                  disabled={subjectAttendanceRows.length === 0}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary-light hover:text-primary disabled:pointer-events-none disabled:opacity-50 lg:px-2 lg:py-1"
                 >
                   <Download size={15} aria-hidden="true" />
                   Download Report
