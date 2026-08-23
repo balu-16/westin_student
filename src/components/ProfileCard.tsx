@@ -15,7 +15,7 @@ export function ProfileCard({ onNavigate, collapsed }: ProfileCardProps) {
   const handleLogout = () => {
     logout()
     onNavigate?.()
-    navigate('/')
+    navigate('/login')
   }
 
   if (collapsed) {

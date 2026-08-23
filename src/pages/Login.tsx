@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
 import { Button } from '../components/Button'
 import { FallingIcons, HotelScene } from '../components/HotelScene'
@@ -206,12 +206,6 @@ export function Login() {
               <span className="font-semibold text-primary-dark">Contact your college administration</span>
             </p>
           </div>
-
-          <p className="mt-6 text-center text-sm text-ink-soft">
-            <Link to="/" className="font-semibold text-primary-dark transition-colors hover:text-primary">
-              ← Back to home
-            </Link>
-          </p>
         </div>
       </div>
     </div>

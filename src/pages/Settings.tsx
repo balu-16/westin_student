@@ -108,7 +108,7 @@ export function Settings() {
 
   const handleLogout = () => {
     logout()
-    navigate('/')
+    navigate('/login')
   }
 
   const handleAvatarPick = async (e: React.ChangeEvent<HTMLInputElement>) => {

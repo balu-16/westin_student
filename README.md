@@ -24,12 +24,15 @@ migrations + seed).
 ## User flow
 
 ```
-Landing (/) → Login (/login) → Dashboard (/dashboard)
-                                 ├── Timetable  (/timetable)
-                                 ├── Attendance (/attendance)
-                                 ├── Materials  (/materials)
-                                 ├── Events     (/events)
-                                 └── Settings   (/settings)
+Login (/login) → Dashboard (/dashboard)
+                 ├── Timetable  (/timetable)
+                 ├── Attendance (/attendance)
+                 ├── Materials  (/materials)
+                 ├── Events     (/events)
+                 └── Settings   (/settings)
+
+(/) and unknown routes redirect to /login; authenticated visitors
+are bounced straight to /dashboard. There is no public landing page.
 ```
 
 ## Wiring

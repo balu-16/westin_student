@@ -7,7 +7,6 @@ import { InlineSpinner } from './components/Loading'
 
 // Route-level code splitting: every page ships as its own lazy chunk so the
 // initial bundle only carries the router, layout and shared primitives.
-const Landing = lazy(() => import('./pages/Landing').then((m) => ({ default: m.Landing })))
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })))
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
 const Timetable = lazy(() => import('./pages/Timetable').then((m) => ({ default: m.Timetable })))
@@ -43,14 +42,9 @@ export default function App() {
       <BrowserRouter>
         <ErrorBoundary>
           <Routes>
-            <Route
-              path="/"
-              element={
-                <Suspense fallback={<RouteFallback />}>
-                  <Landing />
-                </Suspense>
-              }
-            />
+            {/* No public landing page — everyone goes straight to login
+                (authenticated visitors are bounced to /dashboard by Login). */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
               path="/login"
               element={
@@ -109,7 +103,7 @@ export default function App() {
                 }
               />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </ErrorBoundary>
       </BrowserRouter>
