@@ -62,8 +62,8 @@ export function DashboardLayout({ children }: { children?: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-page">
-      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} collapsed={collapsed} />
-      <div className={collapsed ? 'lg:pl-[88px]' : 'lg:pl-[288px]'}>
+      <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} collapsed={collapsed} onToggleCollapsed={toggleSidebar} />
+      <div className={collapsed ? 'lg:pl-[72px] transition-[padding] duration-300' : 'lg:pl-[280px] transition-[padding] duration-300'}>
         <main className="mx-auto w-full max-w-[1200px] animate-fade-in px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {children ?? <Outlet context={context} />}
         </main>
