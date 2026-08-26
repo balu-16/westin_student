@@ -13,7 +13,7 @@ import type { LucideIcon } from 'lucide-react'
 import { Header } from '../components/Header'
 import { StatCard } from '../components/StatCard'
 import { Card } from '../components/Card'
-import { SkeletonCards, SkeletonRows } from '../components/Loading'
+import { PageLoader } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import { formatBytes, formatDateLabel, useApi, type MaterialsPayload } from '../lib/api'
 import type { FileType } from '../types'
@@ -175,36 +175,7 @@ export function StudyMaterials() {
       {failed ? (
         <ErrorState message={error ?? undefined} onRetry={reload} />
       ) : pending ? (
-        <>
-          {/* Statistics */}
-          <SkeletonCards />
-
-          {/* Subject folders */}
-          <section aria-label="Subjects">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink">Subjects</h2>
-            </div>
-            <div role="status" className="flex gap-4 overflow-hidden pb-2">
-              {Array.from({ length: 6 }, (_, i) => (
-                <span
-                  key={i}
-                  aria-hidden="true"
-                  className="h-[80px] w-[230px] shrink-0 animate-pulse rounded-2xl bg-primary-lighter"
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* All materials table */}
-          <Card className="p-0 sm:p-0">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
-              <h2 className="text-base font-semibold text-ink">All Materials</h2>
-            </div>
-            <div className="p-5 sm:p-6">
-              <SkeletonRows rows={5} />
-            </div>
-          </Card>
-        </>
+        <PageLoader label="Fetching materials" />
       ) : (
         <>
           {/* Statistics */}

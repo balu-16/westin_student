@@ -4,7 +4,7 @@ import { CalendarDays, Users } from 'lucide-react'
 import { Header } from '../components/Header'
 import { TimetableCard } from '../components/TimetableCard'
 import { SectionCard } from '../components/Card'
-import { Skeleton, SkeletonRows } from '../components/Loading'
+import { PageLoader } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import { mapClassSession, useApi, type TimetableDay } from '../lib/api'
 import { cx } from '../utils'
@@ -56,31 +56,7 @@ export function Timetable() {
       {failed ? (
         <ErrorState message={error ?? undefined} onRetry={reload} />
       ) : pending ? (
-        <>
-          {/* Day tabs skeleton */}
-          <div
-            role="status"
-            className="flex gap-2 rounded-2xl border border-line bg-white p-2 shadow-card"
-          >
-            {Array.from({ length: 6 }, (_, i) => (
-              <Skeleton key={i} className="h-10 flex-1" />
-            ))}
-          </div>
-
-          <SectionCard
-            title="Classes"
-            icon={<CalendarDays size={18} className="text-primary" aria-hidden="true" />}
-          >
-            <SkeletonRows rows={4} />
-          </SectionCard>
-
-          <SectionCard
-            title="Faculty"
-            icon={<Users size={18} className="text-primary" aria-hidden="true" />}
-          >
-            <SkeletonRows rows={3} />
-          </SectionCard>
-        </>
+        <PageLoader label="Fetching timetable" />
       ) : (
         <>
           {/* Day tabs */}

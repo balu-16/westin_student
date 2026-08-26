@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import { cx } from '../utils'
+import { StudentWalkingLoader } from './StudentWalkingLoader'
 
 interface SpinnerProps {
   size?: number
@@ -64,6 +65,26 @@ export function InlineSpinner({ label = 'Loading…' }: { label?: string }) {
     >
       <Spinner size={16} />
       <span>{label}</span>
+    </div>
+  )
+}
+
+/** Full-section loading state — the Westin Walker mid-stride with a dedicated
+ *  label below it. The walker component carries its own status semantics
+ *  (role="status" + aria-label), so this wrapper is layout only. */
+export function PageLoader({
+  label,
+  size = 120,
+  className,
+}: {
+  label: string
+  /** Rendered walker width in px (height follows the 220:200 viewBox). */
+  size?: number
+  className?: string
+}) {
+  return (
+    <div className={cx('flex min-h-[300px] w-full items-center justify-center py-10', className)}>
+      <StudentWalkingLoader size={size} label={label} />
     </div>
   )
 }

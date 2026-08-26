@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import {
   Bell,
@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Images,
   MapPin,
   Music,
   PartyPopper,
@@ -20,9 +21,9 @@ import { Header } from '../components/Header'
 import { Card } from '../components/Card'
 import { Button } from '../components/Button'
 import { Modal } from '../components/Modal'
-import { SkeletonRows } from '../components/Loading'
+import { PageLoader } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
-import { formatDateLabel, parseDateParts, useApi, type ApiEvent, type EventsPayload } from '../lib/api'
+import { apiFetch, formatDateLabel, parseDateParts, useApi, type ApiEvent, type EventsPayload } from '../lib/api'
 import { getOneSignalState, subscribeOneSignal } from '../lib/onesignal'
 import { cx } from '../utils'
 import type { DashboardLayoutContext } from '../layouts/DashboardLayout'
@@ -57,6 +58,7 @@ interface UpcomingEventView {
   year: number
   weekday: string
   accent: string
+  posterUrl?: string | null
 }
 
 function toUpcomingView(event: ApiEvent): UpcomingEventView {
@@ -71,6 +73,7 @@ function toUpcomingView(event: ApiEvent): UpcomingEventView {
     year: parts.year,
     weekday: parts.weekday,
     accent: meta.accent,
+    posterUrl: event.posterUrl ?? null,
   }
 }
 
@@ -79,15 +82,23 @@ function FeaturedBanner({ event, onViewDetails }: { event: ApiEvent; onViewDetai
   const endDate = event.endDate ? formatDateLabel(event.endDate) : startDate
   return (
     <div className="relative overflow-hidden rounded-[20px] shadow-card">
-      {/* Dark concert-style backdrop */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,167,242,0.5),transparent_55%),radial-gradient(circle_at_80%_75%,rgba(239,68,68,0.45),transparent_50%),linear-gradient(135deg,#111A33_0%,#1B2A52_55%,#0D142B_100%)]"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 opacity-40 [background-image:radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1px)] [background-size:22px_22px]"
-      />
+      {event.posterUrl ? (
+        <>
+          <img src={event.posterUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+        </>
+      ) : (
+        <>
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(59,167,242,0.5),transparent_55%),radial-gradient(circle_at_80%_75%,rgba(239,68,68,0.45),transparent_50%),linear-gradient(135deg,#111A33_0%,#1B2A52_55%,#0D142B_100%)]"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 opacity-40 [background-image:radial-gradient(rgba(255,255,255,0.16)_1px,transparent_1px)] [background-size:22px_22px]"
+          />
+        </>
+      )}
       <div className="relative p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FF3B6B] px-3 py-1 text-xs font-bold tracking-wide text-white shadow-[0_4px_12px_rgba(255,59,107,0.45)]">
@@ -103,11 +114,11 @@ function FeaturedBanner({ event, onViewDetails }: { event: ApiEvent; onViewDetai
         <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-[#7EC3F3]">
           {event.category}
         </p>
-        <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+        <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight text-white sm:text-4xl drop-shadow">
           {event.title}
         </h2>
 
-        <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/80">
+        <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/85">
           <span className="flex items-center gap-2">
             <CalendarDays size={15} className="text-[#7EC3F3]" aria-hidden="true" />
             {startDate} - {endDate}
@@ -138,14 +149,18 @@ function UpcomingRow({ event, onViewDetails }: { event: UpcomingEventView; onVie
         onClick={onViewDetails}
         className="flex w-full gap-4 py-4 text-left transition-colors duration-200 hover:bg-primary-lighter/40"
       >
-        {/* Thumbnail */}
-        <div
-          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-white sm:h-[72px] sm:w-[72px]"
-          style={{ background: `linear-gradient(135deg, ${event.accent}, ${event.accent}B3)` }}
-          aria-hidden="true"
-        >
-          <CalendarDays size={26} />
-        </div>
+        {/* Thumbnail — poster if available */}
+        {event.posterUrl ? (
+          <img src={event.posterUrl} alt="" aria-hidden="true" className="h-16 w-16 shrink-0 rounded-2xl object-cover sm:h-[72px] sm:w-[72px]" />
+        ) : (
+          <div
+            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-white sm:h-[72px] sm:w-[72px]"
+            style={{ background: `linear-gradient(135deg, ${event.accent}, ${event.accent}B3)` }}
+            aria-hidden="true"
+          >
+            <CalendarDays size={26} />
+          </div>
+        )}
 
         <div className="min-w-0 flex-1">
           <span
@@ -295,6 +310,30 @@ export function Events() {
   const [notifState, setNotifState] = useState<'idle' | 'busy' | 'on' | 'blocked'>('idle')
   const [detailsEvent, setDetailsEvent] = useState<ApiEvent | null>(null)
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const [galleryImages, setGalleryImages] = useState<Array<{ id: string; url: string | null }>>([])
+  const [galleryLoading, setGalleryLoading] = useState(false)
+
+  useEffect(() => {
+    if (!detailsEvent) {
+      setGalleryImages([])
+      return
+    }
+    let cancelled = false
+    setGalleryLoading(true)
+    apiFetch<{ images: Array<{ id: string; url: string | null }> }>(`/events/${detailsEvent.id}/images`)
+      .then((res) => {
+        if (!cancelled) setGalleryImages(res.images ?? [])
+      })
+      .catch(() => {
+        if (!cancelled) setGalleryImages([])
+      })
+      .finally(() => {
+        if (!cancelled) setGalleryLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [detailsEvent?.id])
 
   const handleEnableNotifications = async () => {
     setNotifState('busy')
@@ -353,53 +392,7 @@ export function Events() {
       {failed ? (
         <ErrorState message={error ?? undefined} onRetry={reload} />
       ) : pending ? (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-10">
-          {/* Main column */}
-          <div className="space-y-6 xl:col-span-7">
-            <section aria-label="Current event">
-              <div
-                role="status"
-                className="h-[260px] animate-pulse rounded-[20px] bg-primary-lighter"
-              />
-            </section>
-
-            <Card>
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-base font-semibold text-ink">Upcoming Events</h3>
-              </div>
-              <SkeletonRows rows={4} />
-            </Card>
-          </div>
-
-          {/* Sidebar column */}
-          <div className="space-y-6 xl:col-span-3">
-            <EventCalendarWidget events={[]} />
-
-            {/* Categories */}
-            <Card>
-              <h3 className="mb-3 text-base font-semibold text-ink">Event Categories</h3>
-              <SkeletonRows rows={3} />
-            </Card>
-
-            {/* Reminder card */}
-            <Card className="bg-primary-lighter">
-              <div className="flex items-start gap-3.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-primary-dark shadow-card">
-                  <Bell size={18} aria-hidden="true" />
-                </span>
-                <div>
-                  <h3 className="text-base font-bold text-ink">Don&apos;t miss out!</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-                    Turn on notifications to get updates about new events.
-                  </p>
-                  <Button size="sm" className="mt-3.5">
-                    Enable Notifications
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
+        <PageLoader label="Fetching events" />
       ) : (
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-10">
         {/* Main column */}
@@ -530,6 +523,9 @@ export function Events() {
       >
         {detailsEvent && (
           <div className="space-y-4">
+            {detailsEvent.posterUrl && (
+              <img src={detailsEvent.posterUrl} alt={`${detailsEvent.title} poster`} className="w-full rounded-xl object-cover" />
+            )}
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink">
               <span className="flex items-center gap-2">
                 <CalendarDays size={15} className="text-primary" aria-hidden="true" />
@@ -551,6 +547,24 @@ export function Events() {
               <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">
                 {detailsEvent.description?.trim() || 'No description provided yet — check back later.'}
               </p>
+            </div>
+            <div>
+              <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                <Images size={14} className="text-primary" /> Gallery
+              </h3>
+              {galleryLoading ? (
+                <p className="mt-2 text-sm text-ink-soft">Loading images…</p>
+              ) : galleryImages.length === 0 ? (
+                <p className="mt-2 text-sm text-ink-soft">No gallery images yet. Check back after the event.</p>
+              ) : (
+                <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {galleryImages.map((img) =>
+                    img.url ? (
+                      <img key={img.id} src={img.url} alt="Event" className="h-28 w-full rounded-xl object-cover" />
+                    ) : null,
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

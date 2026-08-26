@@ -382,6 +382,8 @@ export interface ApiEvent {
   description: string | null
   isLive: boolean
   createdBy: string
+  posterPath?: string | null
+  posterUrl?: string | null
 }
 
 export interface EventsPayload {

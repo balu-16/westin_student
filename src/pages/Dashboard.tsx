@@ -17,7 +17,7 @@ import { AttendanceChart, AttendanceLegend } from '../components/AttendanceChart
 import { AnnouncementCard } from '../components/AnnouncementCard'
 import { QuickLink } from '../components/QuickLink'
 import { SectionCard } from '../components/Card'
-import { Skeleton, SkeletonCards, SkeletonRows } from '../components/Loading'
+import { PageLoader } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import {
   attendanceBreakdownFrom,
@@ -88,57 +88,43 @@ export function Dashboard() {
 
       {dashFailed ? (
         <ErrorState message={error ?? undefined} onRetry={reload} />
+      ) : dashPending ? (
+        <PageLoader label="Loading your dashboard" size={130} className="min-h-[440px]" />
       ) : (
         <>
           {/* Statistics */}
-          {dashPending ? (
-            <SkeletonCards />
-          ) : (
-            <section aria-label="Statistics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard icon={CalendarDays} title="Classes Today" value={String(stats?.classesToday ?? 0)} footnote={`${stats?.classesCompleted ?? 0} Completed`} />
-              <StatCard
-                icon={PieChart}
-                title="Overall Attendance"
-                value={`${stats?.overallAttendance ?? 0}%`}
-                footnote="Good Job!"
-                footnoteClassName="text-success"
-              />
-              <StatCard icon={BookOpen} title="Subjects" value={String(stats?.subjects ?? 0)} footnote="This Semester" />
-              <StatCard icon={FileText} title="Pending Assignments" value={String(stats?.pendingAssignments ?? 0)} footnote="Due Soon" footnoteClassName="text-warning" />
-            </section>
-          )}
+          <section aria-label="Statistics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon={CalendarDays} title="Classes Today" value={String(stats?.classesToday ?? 0)} footnote={`${stats?.classesCompleted ?? 0} Completed`} />
+            <StatCard
+              icon={PieChart}
+              title="Overall Attendance"
+              value={`${stats?.overallAttendance ?? 0}%`}
+              footnote="Good Job!"
+              footnoteClassName="text-success"
+            />
+            <StatCard icon={BookOpen} title="Subjects" value={String(stats?.subjects ?? 0)} footnote="This Semester" />
+            <StatCard icon={FileText} title="Pending Assignments" value={String(stats?.pendingAssignments ?? 0)} footnote="Due Soon" footnoteClassName="text-warning" />
+          </section>
 
           {/* Timetable + Attendance */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-            {dashPending ? (
-              <SectionCard
-                title="Today's Timetable"
-                icon={<CalendarDays size={18} className="text-primary" aria-hidden="true" />}
-                actionLabel="View Full Timetable"
-                actionTo="/timetable"
-                className="lg:col-span-3"
-              >
-                <SkeletonRows rows={4} />
-              </SectionCard>
-            ) : (
-              <SectionCard
-                title="Today's Timetable"
-                icon={<CalendarDays size={18} className="text-primary" aria-hidden="true" />}
-                actionLabel="View Full Timetable"
-                actionTo="/timetable"
-                className="lg:col-span-3"
-              >
-                <ol className="relative">
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-2 left-[100px] top-2 w-px bg-line sm:left-[138px] lg:left-[148px]"
-                  />
-                  {todaySessions.map((session) => (
-                    <TimetableCard key={session.id} session={session} />
-                  ))}
-                </ol>
-              </SectionCard>
-            )}
+            <SectionCard
+              title="Today's Timetable"
+              icon={<CalendarDays size={18} className="text-primary" aria-hidden="true" />}
+              actionLabel="View Full Timetable"
+              actionTo="/timetable"
+              className="lg:col-span-3"
+            >
+              <ol className="relative">
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-2 left-[100px] top-2 w-px bg-line sm:left-[138px] lg:left-[148px]"
+                />
+                {todaySessions.map((session) => (
+                  <TimetableCard key={session.id} session={session} />
+                ))}
+              </ol>
+            </SectionCard>
 
             <SectionCard
               title="Attendance Overview"
@@ -148,17 +134,7 @@ export function Dashboard() {
               className="items-center lg:col-span-2"
             >
               {attPending ? (
-                <div className="flex min-h-[300px] flex-1 flex-col items-center justify-center gap-8">
-                  <span
-                    aria-hidden="true"
-                    className="h-[200px] w-[200px] animate-pulse rounded-full bg-primary-lighter"
-                  />
-                  <div className="w-full max-w-[260px] space-y-3">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-4/5" />
-                    <Skeleton className="h-4 w-3/5" />
-                  </div>
-                </div>
+                <PageLoader label="Fetching attendance" size={96} className="min-h-[220px] py-4" />
               ) : attFailed ? (
                 <ErrorState
                   message={attendanceError ?? undefined}
@@ -182,31 +158,21 @@ export function Dashboard() {
 
           {/* Announcements + Quick links */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-            {dashPending ? (
-              <SectionCard
-                title="Announcements"
-                icon={<Megaphone size={18} className="text-primary" aria-hidden="true" />}
-                className="lg:col-span-3"
-              >
-                <SkeletonRows rows={3} />
-              </SectionCard>
-            ) : (
-              <SectionCard
-                title="Announcements"
-                icon={<Megaphone size={18} className="text-primary" aria-hidden="true" />}
-                className="lg:col-span-3"
-              >
-                <ul className="relative">
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-3 left-[5px] top-3 w-px bg-line"
-                  />
-                  {announcements.map((a, i) => (
-                    <AnnouncementCard key={a.id} announcement={a} isLast={i === announcements.length - 1} />
-                  ))}
-                </ul>
-              </SectionCard>
-            )}
+            <SectionCard
+              title="Announcements"
+              icon={<Megaphone size={18} className="text-primary" aria-hidden="true" />}
+              className="lg:col-span-3"
+            >
+              <ul className="relative">
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-3 left-[5px] top-3 w-px bg-line"
+                />
+                {announcements.map((a, i) => (
+                  <AnnouncementCard key={a.id} announcement={a} isLast={i === announcements.length - 1} />
+                ))}
+              </ul>
+            </SectionCard>
 
             <SectionCard title="Quick Links" className="lg:col-span-2">
               <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">

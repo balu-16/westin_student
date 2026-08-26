@@ -5,7 +5,7 @@ import { Header } from '../components/Header'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { Toggle } from '../components/Toggle'
-import { Skeleton, SkeletonRows } from '../components/Loading'
+import { PageLoader } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import { Avatar } from '../components/Avatar'
 import { apiFetch, uploadBytes, useApi, type SettingsPayload } from '../lib/api'
@@ -108,7 +108,7 @@ export function Settings() {
 
   const handleLogout = () => {
     logout()
-    navigate('/login')
+    navigate('/login', { replace: true })
   }
 
   const handleAvatarPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,38 +173,7 @@ export function Settings() {
       {failed ? (
         <ErrorState message={error ?? undefined} onRetry={reload} />
       ) : pending ? (
-        <>
-          {/* Profile */}
-          <Card>
-            <div className="mb-6 flex items-center gap-3">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-light text-primary-dark">
-                <GraduationCap size={22} aria-hidden="true" />
-              </span>
-              <div>
-                <h2 className="text-base font-semibold text-ink">Profile</h2>
-                <p className="text-xs text-ink-soft">Your academic identity on the portal.</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {Array.from({ length: 6 }, (_, i) => (
-                <Skeleton key={i} className="h-[62px]" />
-              ))}
-            </div>
-          </Card>
-
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            {/* Notifications */}
-            <Card>
-              <h2 className="mb-4 text-base font-semibold text-ink">Notifications</h2>
-              <SkeletonRows rows={4} />
-            </Card>
-
-            <Card>
-              <h2 className="mb-4 text-base font-semibold text-ink">Security</h2>
-              <SkeletonRows rows={1} />
-            </Card>
-          </div>
-        </>
+        <PageLoader label="Loading settings" />
       ) : (
       <>
       {/* Profile */}

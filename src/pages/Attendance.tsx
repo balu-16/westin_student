@@ -19,7 +19,7 @@ import { Header } from '../components/Header'
 import { StatCard } from '../components/StatCard'
 import { AttendanceChart } from '../components/AttendanceChart'
 import { Card, SectionCard } from '../components/Card'
-import { Skeleton, SkeletonCards, SkeletonRows } from '../components/Loading'
+import { PageLoader, Skeleton } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import {
   monthLabel,
@@ -324,79 +324,7 @@ export function Attendance() {
       {failed ? (
         <ErrorState message={error ?? undefined} onRetry={reload} />
       ) : pending ? (
-        <>
-          {/* Summary stat cards */}
-          <SkeletonCards />
-
-          {/* Subject-wise table + overview donut */}
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[13fr_7fr]">
-            <Card className="p-0 sm:p-0">
-              <div className="flex items-center justify-between border-b border-line px-5 py-4 sm:px-6">
-                <h3 className="flex items-center gap-2.5 text-base font-semibold text-ink">
-                  <BookOpen size={18} className="text-primary" aria-hidden="true" />
-                  Subject-wise Attendance
-                </h3>
-              </div>
-              <div className="p-5 sm:p-6">
-                <SkeletonRows rows={5} />
-              </div>
-            </Card>
-
-            <SectionCard
-              title="Attendance Overview"
-              icon={<ChartColumnBig size={18} className="text-primary" aria-hidden="true" />}
-            >
-              <div className="flex min-h-[240px] flex-1 flex-col items-center justify-center gap-7 sm:flex-row sm:gap-6">
-                <span
-                  aria-hidden="true"
-                  className="h-[200px] w-[200px] animate-pulse rounded-full bg-primary-lighter"
-                />
-                <div className="w-full max-w-[220px] space-y-4">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-4/5" />
-                  <Skeleton className="h-4 w-3/5" />
-                </div>
-              </div>
-            </SectionCard>
-          </div>
-
-          {/* Calendar + quick stats */}
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[13fr_7fr]">
-            <SectionCard
-              title="Attendance Calendar"
-              icon={<CalendarDays size={18} className="text-primary" aria-hidden="true" />}
-            >
-              <div className="mb-4">
-                <Skeleton className="h-8 w-[220px]" />
-              </div>
-              <div className="overflow-x-auto scrollbar-thin">
-                <div className="min-w-[540px]">
-                  <div className="grid grid-cols-6 gap-2 pb-2 text-center text-[11px] font-bold uppercase tracking-wide text-ink-soft">
-                    {weekdayHeaders.map((d) => (
-                      <span key={d}>{d}</span>
-                    ))}
-                  </div>
-                  <div className="space-y-2">
-                    {Array.from({ length: 5 }, (_, w) => (
-                      <div key={w} className="grid grid-cols-6 gap-2">
-                        {Array.from({ length: 6 }, (_, d) => (
-                          <Skeleton key={d} className="h-[86px]" />
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </SectionCard>
-
-            <SectionCard
-              title="Quick Stats"
-              icon={<ChartColumnBig size={18} className="text-primary" aria-hidden="true" />}
-            >
-              <SkeletonRows rows={4} />
-            </SectionCard>
-          </div>
-        </>
+        <PageLoader label="Fetching attendance" />
       ) : (
         <>
           {/* Summary stat cards */}

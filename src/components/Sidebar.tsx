@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
-  Search,
   Settings,
   X,
 } from 'lucide-react'
@@ -148,28 +147,6 @@ function SidebarContent({ onNavigate, collapsed, onToggleCollapsed }: SidebarCon
       )}
 
       {!collapsed && <div className="mx-4 h-px shrink-0 bg-white/12" />}
-
-      {/* Search — only expanded */}
-      {!collapsed && (
-        <div className="shrink-0 px-3 pt-3">
-          <label className="group relative flex">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/55 transition-colors group-focus-within:text-white/80">
-              <Search size={14} aria-hidden="true" />
-            </span>
-            <input
-              type="search"
-              placeholder="Search"
-              aria-label="Search navigation"
-              className="h-9 w-full rounded-xl border border-white/14 bg-white/[0.08] py-2 pl-9 pr-9 text-sm font-medium text-white placeholder:text-white/55 backdrop-blur-sm transition-all placeholder:font-medium hover:bg-white/[0.11] hover:border-white/20 focus:border-white/25 focus:bg-white/[0.13] focus:outline-none focus:ring-2 focus:ring-white/20"
-            />
-            <span className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-md border border-white/15 bg-white/10 px-1.5 py-0.5 text-[10px] font-bold leading-none tracking-wide text-white/60 sm:flex">
-              ⌘K
-            </span>
-          </label>
-        </div>
-      )}
-
-      {collapsed && <div className="mx-2 mt-3 h-px shrink-0 bg-white/12" />}
 
       {/* Navigation */}
       <nav
