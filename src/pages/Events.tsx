@@ -6,8 +6,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Expand,
   Images,
   MapPin,
+  Maximize2,
   Music,
   PartyPopper,
   Presentation,
@@ -312,10 +314,28 @@ export function Events() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [galleryImages, setGalleryImages] = useState<Array<{ id: string; url: string | null }>>([])
   const [galleryLoading, setGalleryLoading] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+
+  const openLightbox = (idx: number) => setLightboxIndex(idx)
+  const closeLightbox = () => setLightboxIndex(null)
+  const goNext = () => setLightboxIndex((prev) => (prev !== null ? (prev + 1) % galleryImages.length : null))
+  const goPrev = () => setLightboxIndex((prev) => (prev !== null ? (prev - 1 + galleryImages.length) % galleryImages.length : null))
+
+  useEffect(() => {
+    if (lightboxIndex === null) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox()
+      if (e.key === 'ArrowRight') goNext()
+      if (e.key === 'ArrowLeft') goPrev()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [lightboxIndex, galleryImages.length])
 
   useEffect(() => {
     if (!detailsEvent) {
       setGalleryImages([])
+      setLightboxIndex(null)
       return
     }
     let cancelled = false
@@ -549,18 +569,34 @@ export function Events() {
               </p>
             </div>
             <div>
-              <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                <Images size={14} className="text-primary" /> Gallery
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                  <Images size={14} className="text-primary" /> Gallery
+                </h3>
+                {galleryImages.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => openLightbox(0)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-semibold text-ink-soft hover:border-primary/40 hover:text-primary"
+                  >
+                    <Maximize2 size={12} /> Fullscreen
+                  </button>
+                )}
+              </div>
               {galleryLoading ? (
                 <p className="mt-2 text-sm text-ink-soft">Loading images…</p>
               ) : galleryImages.length === 0 ? (
                 <p className="mt-2 text-sm text-ink-soft">No gallery images yet. Check back after the event.</p>
               ) : (
                 <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {galleryImages.map((img) =>
+                  {galleryImages.map((img, idx) =>
                     img.url ? (
-                      <img key={img.id} src={img.url} alt="Event" className="h-28 w-full rounded-xl object-cover" />
+                      <button key={img.id} type="button" onClick={() => openLightbox(idx)} className="group relative overflow-hidden rounded-xl">
+                        <img src={img.url} alt="Event" className="h-28 w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]" />
+                        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/20">
+                          <Expand size={18} className="text-white opacity-0 transition-opacity group-hover:opacity-100" />
+                        </span>
+                      </button>
                     ) : null,
                   )}
                 </div>
@@ -569,6 +605,50 @@ export function Events() {
           </div>
         )}
       </Modal>
+
+      {lightboxIndex !== null && galleryImages[lightboxIndex]?.url && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+          onClick={closeLightbox}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Gallery fullscreen"
+        >
+          <button
+            type="button"
+            onClick={closeLightbox}
+            aria-label="Close fullscreen"
+            className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2.5 text-white backdrop-blur hover:bg-white/20"
+          >
+            <X size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); goPrev() }}
+            aria-label="Previous image"
+            className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white backdrop-blur hover:bg-white/20 sm:left-4"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); goNext() }}
+            aria-label="Next image"
+            className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white backdrop-blur hover:bg-white/20 sm:right-4"
+          >
+            <ChevronRight size={22} />
+          </button>
+          <img
+            src={galleryImages[lightboxIndex].url!}
+            alt="Gallery fullscreen"
+            className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+            {lightboxIndex + 1} / {galleryImages.length}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
