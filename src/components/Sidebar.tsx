@@ -71,7 +71,8 @@ function SidebarContent({ onNavigate, collapsed, onToggleCollapsed }: SidebarCon
   return (
     <div
       className={cx(
-        'flex h-full shrink-0 flex-col overflow-hidden border-r border-white/10 bg-gradient-to-b from-[#4FB0F4] via-[#3BA7F2] to-[#0E6EBD] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_20px_60px_rgba(14,110,189,0.22)]',
+        'flex h-full shrink-0 flex-col border-r border-white/10 bg-gradient-to-b from-[#4FB0F4] via-[#3BA7F2] to-[#0E6EBD] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_20px_60px_rgba(14,110,189,0.22)]',
+        collapsed ? 'overflow-visible' : 'overflow-hidden',
         responsiveWidth,
       )}
     >
@@ -117,14 +118,14 @@ function SidebarContent({ onNavigate, collapsed, onToggleCollapsed }: SidebarCon
           </>
         )}
 
-        {/* Collapsed — show expand button on hover via absolute */}
+        {/* Collapsed — show expand button (fully visible inside header) */}
         {collapsed && onToggleCollapsed && (
           <button
             type="button"
             onClick={onToggleCollapsed}
             aria-label="Expand sidebar"
             title="Expand sidebar"
-            className="absolute -right-3 top-6 hidden h-6 w-6 items-center justify-center rounded-full border border-line bg-white text-ink-soft shadow-md transition-colors hover:text-primary lg:flex"
+            className="absolute right-1.5 top-1.5 hidden h-6 w-6 items-center justify-center rounded-full border border-line bg-white text-ink-soft shadow-md transition-colors hover:text-primary lg:flex"
           >
             <PanelLeftOpen size={12} aria-hidden="true" />
           </button>
@@ -174,8 +175,8 @@ function SidebarContent({ onNavigate, collapsed, onToggleCollapsed }: SidebarCon
       <nav
         aria-label="Portal navigation"
         className={cx(
-          'flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin py-3',
-          collapsed ? 'space-y-1 px-2' : 'space-y-5 px-3',
+          'flex-1 py-3 scrollbar-thin min-h-0',
+          collapsed ? 'space-y-1 px-2 overflow-y-auto overflow-x-visible' : 'space-y-5 px-3 overflow-y-auto overflow-x-hidden',
         )}
       >
         {collapsed
@@ -273,14 +274,16 @@ interface SidebarProps {
   onClose: () => void
   collapsed?: boolean
   onToggleCollapsed?: () => void
+  onHoverEnter?: () => void
+  onHoverLeave?: () => void
 }
 
-export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: SidebarProps) {
+export function Sidebar({ open, onClose, collapsed, onToggleCollapsed, onHoverEnter, onHoverLeave }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden lg:block">
-        <div className="fixed inset-y-0 left-0 z-30">
+        <div className="fixed inset-y-0 left-0 z-30" onMouseEnter={onHoverEnter} onMouseLeave={onHoverLeave}>
           <SidebarContent collapsed={collapsed} onToggleCollapsed={onToggleCollapsed} />
         </div>
       </aside>
