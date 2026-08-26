@@ -22,7 +22,6 @@ export function DashboardLayout({ children }: { children?: ReactNode }) {
       return false
     }
   })
-  const [hovered, setHovered] = useState(false)
   const location = useLocation()
 
   useEffect(() => {
@@ -51,10 +50,6 @@ export function DashboardLayout({ children }: { children?: ReactNode }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [menuOpen])
 
-  useEffect(() => {
-    setHovered(false)
-  }, [collapsed, location.pathname])
-
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
@@ -65,21 +60,15 @@ export function DashboardLayout({ children }: { children?: ReactNode }) {
   const toggleMenu = () => setMenuOpen((v) => !v)
   const context: DashboardLayoutContext = { openMenu, closeMenu, toggleMenu, isMenuOpen: menuOpen, toggleSidebar, collapsed }
 
-  const effectiveCollapsed = collapsed && !hovered
-
   return (
     <div className="min-h-screen bg-page">
       <Sidebar
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        collapsed={effectiveCollapsed}
+        collapsed={collapsed}
         onToggleCollapsed={toggleSidebar}
-        onHoverEnter={() => {
-          if (collapsed) setHovered(true)
-        }}
-        onHoverLeave={() => setHovered(false)}
       />
-      <div className={effectiveCollapsed ? 'lg:pl-[72px] transition-[padding] duration-300' : 'lg:pl-[280px] transition-[padding] duration-300'}>
+      <div className={collapsed ? 'lg:pl-[72px] transition-[padding] duration-300' : 'lg:pl-[280px] transition-[padding] duration-300'}>
         <main className="mx-auto w-full max-w-[1200px] animate-fade-in px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {children ?? <Outlet context={context} />}
         </main>

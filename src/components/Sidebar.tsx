@@ -251,16 +251,14 @@ interface SidebarProps {
   onClose: () => void
   collapsed?: boolean
   onToggleCollapsed?: () => void
-  onHoverEnter?: () => void
-  onHoverLeave?: () => void
 }
 
-export function Sidebar({ open, onClose, collapsed, onToggleCollapsed, onHoverEnter, onHoverLeave }: SidebarProps) {
+export function Sidebar({ open, onClose, collapsed, onToggleCollapsed }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden lg:block">
-        <div className="fixed inset-y-0 left-0 z-30" onMouseEnter={onHoverEnter} onMouseLeave={onHoverLeave}>
+        <div className="fixed inset-y-0 left-0 z-30">
           <SidebarContent collapsed={collapsed} onToggleCollapsed={onToggleCollapsed} />
         </div>
       </aside>
