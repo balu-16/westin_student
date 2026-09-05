@@ -104,11 +104,17 @@ function FeaturedBanner({ event, onViewDetails }: { event: ApiEvent; onViewDetai
       <div className="relative p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FF3B6B] px-3 py-1 text-xs font-bold tracking-wide text-white shadow-[0_4px_12px_rgba(255,59,107,0.45)]">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-            </span>
-            LIVE NOW
+            {event.isLive ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                </span>
+                LIVE NOW
+              </>
+            ) : (
+              'UPCOMING'
+            )}
           </span>
           <PartyPopper size={22} className="text-white/60" aria-hidden="true" />
         </div>
@@ -187,8 +193,16 @@ function UpcomingRow({ event, onViewDetails }: { event: UpcomingEventView; onVie
   )
 }
 
-/** Sun-first calendar grid, marking live + upcoming events. Month is browsable. */
-function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
+/** Sun-first calendar grid, marking live + upcoming events. Click a day to filter. */
+function EventCalendarWidget({
+  events,
+  selectedDay,
+  onSelectDay,
+}: {
+  events: ApiEvent[]
+  selectedDay: string | null
+  onSelectDay: (_d: string | null) => void
+}) {
   const now = new Date()
   const [cursor, setCursor] = useState(() => ({ year: now.getFullYear(), month: now.getMonth() }))
   const year = cursor.year
@@ -263,20 +277,28 @@ function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
           const isCurrent = day === currentDay
           const isLive = liveDays.has(day)
           const isUpcoming = upcomingDays.has(day)
+          const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+          const selected = selectedDay === iso
           return (
             <span key={day} className="flex items-center justify-center py-0.5">
-              <span
+              <button
+                type="button"
+                onClick={() => onSelectDay(selected ? null : iso)}
+                aria-pressed={selected}
+                aria-label={iso}
                 className={cx(
                   'relative flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-200',
-                  isCurrent
-                    ? 'bg-primary text-white'
-                    : isLive || isUpcoming
-                      ? 'bg-primary-light text-primary-dark'
-                      : 'text-ink-soft hover:bg-primary-lighter',
+                  selected
+                    ? 'bg-primary-dark text-white'
+                    : isCurrent
+                      ? 'bg-primary text-white'
+                      : isLive || isUpcoming
+                        ? 'bg-primary-light text-primary-dark hover:bg-primary hover:text-white'
+                        : 'text-ink-soft hover:bg-primary-lighter',
                 )}
               >
                 {day}
-                {(isLive || isUpcoming) && !isCurrent && (
+                {(isLive || isUpcoming) && !isCurrent && !selected && (
                   <span
                     aria-hidden="true"
                     className={cx(
@@ -285,7 +307,7 @@ function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
                     )}
                   />
                 )}
-              </span>
+              </button>
             </span>
           )
         })}
@@ -293,21 +315,32 @@ function EventCalendarWidget({ events }: { events: ApiEvent[] }) {
 
       <div className="mt-4 flex items-center justify-center gap-5 border-t border-line pt-3 text-[11px] text-ink-soft">
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
-          Current Event
+          <span className="h-2.5 w-2.5 rounded-full bg-danger" aria-hidden="true" />
+          Live Event
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full border-2 border-primary bg-white" aria-hidden="true" />
+          <span className="h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
           Upcoming Event
         </span>
       </div>
+      <p className="mt-2 text-center text-[11px] text-ink-soft">Click a day to filter the list.</p>
     </Card>
   )
 }
 
 export function Events() {
   const { openMenu } = useOutletContext<DashboardLayoutContext>()
-  const { data, error, loading, reload } = useApi<EventsPayload>('/events')
+  const [search, setSearch] = useState('')
+  const [tab, setTab] = useState<'upcoming' | 'past' | 'all'>('upcoming')
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const eventsPath = useMemo(() => {
+    const params = new URLSearchParams()
+    if (search.trim()) params.set('search', search.trim())
+    if (tab !== 'upcoming') params.set('includePast', 'true')
+    const qs = params.toString()
+    return qs ? `/events?${qs}` : '/events'
+  }, [search, tab])
+  const { data, error, loading, reload } = useApi<EventsPayload>(eventsPath)
   // Real push opt-in state for the reminder card button (click handler → prompt allowed)
   const [notifState, setNotifState] = useState<'idle' | 'busy' | 'on' | 'blocked'>('idle')
   const [detailsEvent, setDetailsEvent] = useState<ApiEvent | null>(null)
@@ -370,12 +403,24 @@ export function Events() {
   const failed = error && !data
 
   const featured = data?.featured ?? null
+  const baseList = useMemo(() => {
+    if (tab === 'past') return data?.past ?? []
+    if (tab === 'all') return [...(data?.upcoming ?? []), ...(data?.past ?? [])]
+    return data?.upcoming ?? []
+  }, [data, tab])
   const upcomingEvents = useMemo(
     () =>
-      (data?.upcoming ?? [])
+      baseList
         .filter((e) => !featured || e.id !== featured.id)
-        .filter((e) => !activeCategory || e.category === activeCategory),
-    [data, featured, activeCategory],
+        .filter((e) => !activeCategory || e.category === activeCategory)
+        .filter((e) => {
+          if (!selectedDay) return true
+          const end = e.endDate && e.endDate > e.startDate ? e.endDate.slice(0, 10) : e.startDate.slice(0, 10)
+          const start = e.startDate.slice(0, 10)
+          return start <= selectedDay && selectedDay <= end
+        })
+        .sort((a, b) => a.startDate.localeCompare(b.startDate)),
+    [baseList, featured, activeCategory, selectedDay],
   )
   const eventCategories = useMemo(
     () =>
@@ -422,19 +467,59 @@ export function Events() {
           </section>
 
           <Card>
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-base font-semibold text-ink">Upcoming Events</h3>
-              {activeCategory && (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-semibold text-ink">
+                {tab === 'past' ? 'Past Events' : tab === 'all' ? 'All Events' : 'Upcoming Events'}
+              </h3>
+              {(activeCategory || selectedDay) && (
                 <button
                   type="button"
-                  onClick={() => setActiveCategory(null)}
+                  onClick={() => {
+                    setActiveCategory(null)
+                    setSelectedDay(null)
+                  }}
                   className="inline-flex items-center gap-1.5 rounded-full bg-primary-light px-3 py-1.5 text-xs font-semibold text-primary-dark transition-colors duration-200 hover:bg-primary hover:text-white"
                 >
-                  {(categoryMeta[activeCategory] ?? defaultCategoryMeta).name}
+                  {activeCategory ? (categoryMeta[activeCategory] ?? defaultCategoryMeta).name : ''}
+                  {activeCategory && selectedDay ? ' • ' : ''}
+                  {selectedDay ?? ''}
                   <X size={12} aria-hidden="true" />
-                  <span className="sr-only">Clear category filter</span>
+                  <span className="sr-only">Clear filters</span>
                 </button>
               )}
+            </div>
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search events…"
+                aria-label="Search events"
+                className="h-10 min-w-[160px] flex-1 rounded-xl border border-line bg-white px-3.5 text-sm text-ink placeholder:text-ink-soft/60 focus:border-primary focus:outline-none"
+              />
+              <div role="tablist" aria-label="Event time filter" className="flex gap-1 rounded-xl border border-line bg-primary-lighter/40 p-1">
+                {(
+                  [
+                    { id: 'upcoming', label: 'Upcoming' },
+                    { id: 'past', label: 'Past' },
+                    { id: 'all', label: 'All' },
+                  ] as const
+                ).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === t.id}
+                    onClick={() => setTab(t.id)}
+                    className={cx(
+                      'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors',
+                      tab === t.id ? 'bg-primary text-white' : 'text-ink-soft hover:text-primary-dark',
+                    )}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <ul>
               {upcomingEvents.map((event) => (
@@ -455,7 +540,11 @@ export function Events() {
 
         {/* Sidebar column */}
         <div className="space-y-6 xl:col-span-3">
-          <EventCalendarWidget events={data?.upcoming ?? []} />
+          <EventCalendarWidget
+            events={[...(data?.upcoming ?? []), ...(data?.past ?? [])]}
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+          />
 
           {/* Categories */}
           <Card>

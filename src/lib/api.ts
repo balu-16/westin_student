@@ -347,8 +347,16 @@ export interface AttendancePayload {
   summary: { overall: number; present: number; absent: number; leave: number; total: number }
   subjects: Array<{ id: string; code: string | null; subject: string | null; held: number; attended: number; percentage: number }>
   overview: Array<{ label: string; value: number }>
-  calendar: Array<{ date: string; status: 'present' | 'absent' | 'mixed' | 'none' }>
-  quickStats: { thisMonth: number; lastMonth: number; semesterAvg: number; required: number }
+  calendar: Array<{ date: string; status: 'present' | 'absent' | 'mixed' | 'leave' | 'none'; classes?: number }>
+  quickStats: {
+    viewedMonth: number
+    prevMonth: number
+    overallAvg: number
+    thisMonth: number
+    lastMonth: number
+    semesterAvg: number
+    required: number
+  }
 }
 
 export interface MaterialsFile {
@@ -389,6 +397,7 @@ export interface ApiEvent {
 export interface EventsPayload {
   featured: ApiEvent | null
   upcoming: ApiEvent[]
+  past?: ApiEvent[]
   calendarMarks: string[]
   categories: Array<{ category: string; count: number }>
 }

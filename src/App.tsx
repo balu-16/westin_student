@@ -16,6 +16,7 @@ const StudyMaterials = lazy(() =>
 )
 const Events = lazy(() => import('./pages/Events').then((m) => ({ default: m.Events })))
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
+const OtpDemo = lazy(() => import('./pages/OtpDemo').then((m) => ({ default: m.OtpDemo })))
 
 /** Walker fallback for chunk-loaded routes — shows the section's own
  *  dedicated label so it never fights the page's data-loading state. */
@@ -130,6 +131,14 @@ function AppRoutes() {
           element={
             <Suspense fallback={<StudentPageFallback label="Loading settings" />}>
               <Settings />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/otp-demo"
+          element={
+            <Suspense fallback={<StudentPageFallback label="Loading OTP demo" />}>
+              <OtpDemo />
             </Suspense>
           }
         />
