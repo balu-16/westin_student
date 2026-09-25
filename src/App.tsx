@@ -5,9 +5,10 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { DashboardLayout } from './layouts/DashboardLayout'
 import { PageLoader } from './components/Loading'
 import { PublicLayout } from './public/PublicLayout'
+import { PublicHome } from './public/PublicHome'
 
-// Route-level code splitting: every page ships as its own lazy chunk so the
-// initial bundle only carries the router, layout and shared primitives.
+// Keep the landing page in the first render: a short loading fallback moves
+// the footer and causes a large layout shift. Other pages remain lazy-loaded.
 const Login = lazy(() => import('./pages/Login').then((m) => ({ default: m.Login })))
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
 const Timetable = lazy(() => import('./pages/Timetable').then((m) => ({ default: m.Timetable })))
@@ -18,7 +19,6 @@ const StudyMaterials = lazy(() =>
 const Events = lazy(() => import('./pages/Events').then((m) => ({ default: m.Events })))
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
 const OtpDemo = lazy(() => import('./pages/OtpDemo').then((m) => ({ default: m.OtpDemo })))
-const PublicHome = lazy(() => import('./public/PublicHome').then((m) => ({ default: m.PublicHome })))
 const PublicPage = lazy(() => import('./public/PublicPage').then((m) => ({ default: m.PublicPage })))
 const PublicSearch = lazy(() => import('./public/PublicPage').then((m) => ({ default: m.PublicSearch })))
 const PublicNotFound = lazy(() => import('./public/PublicPage').then((m) => ({ default: m.NotFound })))
@@ -58,14 +58,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route element={<PublicLayout />}>
-        <Route
-          path="/"
-          element={
-            <Suspense fallback={<PageLoader label="Opening Westin" className="min-h-[60vh]" />}>
-              <PublicHome />
-            </Suspense>
-          }
-        />
+        <Route path="/" element={<PublicHome />} />
         <Route
           path="/about/*"
           element={

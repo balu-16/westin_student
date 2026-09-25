@@ -4,8 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="/icons/apple-touch-icon.png"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <meta
       id="portal-default-description"
       name="description"
@@ -17,31 +24,58 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Westin" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/inter-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
+    <script>
+      // Discover landing-page LCP resources before the SPA renders, without
+      // downloading homepage artwork on login or private deep links.
+      if (location.pathname === "/") {
+        const headingFont = document.createElement("link");
+        headingFont.rel = "preload";
+        headingFont.as = "font";
+        headingFont.type = "font/woff2";
+        headingFont.crossOrigin = "anonymous";
+        headingFont.href = "/fonts/bricolage-latin.woff2";
+        document.head.append(headingFont);
+        for (const [media, name, widths, sizes] of [
+          [
+            "(max-width: 767px)",
+            "mobile",
+            [480, 720, 960],
+            "calc(100vw - 12px)",
+          ],
+          [
+            "(min-width: 768px)",
+            "desktop",
+            [960, 1440, 1920],
+            "(min-width: 1440px) 900px, (min-width: 1024px) 65vw, 100vw",
+          ],
+        ]) {
+          const art = document.createElement("link");
+          art.rel = "preload";
+          art.as = "image";
+          art.media = media;
+          art.fetchPriority = "high";
+          art.imageSrcset = widths
+            .map(
+              (width) =>
+                `/images/skybook/skybook-${name}-${width}.webp ${width}w`,
+            )
+            .join(", ");
+          art.imageSizes = sizes;
+          document.head.append(art);
+        }
+      }
+    </script>
     <title>Student Portal — Your Academic Life, Simplified</title>
 
-    <!-- OneSignal Web Push (Custom Code setup — no auto-prompt; permission is requested
-         only AFTER login via the post-login banner / Settings toggle, see src/lib/onesignal.ts).
-         App is separate from the faculty portal's because origins cannot share a OneSignal app. -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function (OneSignal) {
-        await OneSignal.init({
-          appId: "53e2a6fc-6850-43f0-bb4f-aa60881a49e0",
-          allowLocalhostAsSecureOrigin: true,
-          notifyButton: { enable: false },
-          promptOptions: { slidedown: { prompts: [] } },
-          welcomeNotification: { disable: true },
-          autoResubscribe: false,
-        });
-      });
-    </script>
+    <!-- Push SDK loading belongs to the private portal facade in src/lib/onesignal.ts.
+         Public browsing and the login screen never initialize a notification SDK. -->
   </head>
   <body>
     <div id="root"></div>

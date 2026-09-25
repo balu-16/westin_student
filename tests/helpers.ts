@@ -1,7 +1,8 @@
 import { expect, type Page } from "@playwright/test";
 
 export async function isolateThirdParties(page: Page) {
-  // Existing portal-wide SDK is not part of the homepage change or test surface.
+  // Keep route smoke tests deterministic if they enter a private portal screen.
+  // Separate boundary tests assert that public pages never request these hosts.
   await page.route(
     /https:\/\/(cdn\.onesignal\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)/,
     (route) => route.fulfill({ status: 200, body: "" }),

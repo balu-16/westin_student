@@ -1125,6 +1125,10 @@
 .sk-invitation .sk-actions {
   margin-block: 25px 13px;
 }
+.sk-invitation .sk-text-link,
+.sk-invitation .sk-button-outline {
+  color: #0b538d;
+}
 .sk-invitation-paper {
   position: relative;
   display: flex;
@@ -1386,9 +1390,9 @@
     min-height: 570px;
   }
   .sk-hero-art {
-    width: calc(100% + 65px);
-    margin-left: -15px !important;
-    margin-right: -50px !important;
+    width: calc(100% + 20px);
+    margin-left: -20px !important;
+    margin-right: 0 !important;
   }
   .sk-hero .sk-actions {
     flex-wrap: wrap;
@@ -1700,7 +1704,9 @@
   .sk-hero .sk-actions {
     justify-content: flex-start;
     gap: 10px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 360px;
   }
   .sk-hero .sk-button {
     font-size: 12px;

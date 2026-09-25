@@ -105,14 +105,14 @@ export function Login() {
       <main className="login-page-main">
         <LoginPullScene>
           <div className="login-card">
-            <div className="mb-7 flex items-center justify-between gap-3">
+            <div className="login-card-topline mb-7 flex items-center justify-between gap-3">
               <span className="rounded-full border border-[#e0ece6] bg-[#eef5f4] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#32637c]">
                 Student portal
               </span>
               <span className="text-[10px] font-medium text-[#6b7f8d]">Secure sign-in</span>
             </div>
 
-            <div className="mb-7 flex flex-col items-center text-center">
+            <div className="login-card-intro mb-7 flex flex-col items-center text-center">
               <picture>
                 <source srcSet={westinLogoAvif} type="image/avif" />
                 <img
@@ -130,7 +130,7 @@ export function Login() {
             </div>
 
             <form onSubmit={handleSubmit} noValidate>
-              <div className="space-y-4">
+              <div className="login-card-fields space-y-4">
                 <div>
                   <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink">
                     Student ID / Email
@@ -195,7 +195,7 @@ export function Login() {
               </Button>
             </form>
 
-            <p className="mt-6 text-center text-sm leading-relaxed text-ink-soft">
+            <p className="login-card-help mt-6 text-center text-sm leading-relaxed text-ink-soft">
               Don&apos;t have an account?{' '}
               <a href="mailto:balarakeshg@gmail.com" className="font-semibold text-primary-dark hover:text-primary">
                 Contact your college administration

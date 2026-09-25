@@ -16,7 +16,7 @@ export default defineConfig({
   projects: [
     {
       name: "preview",
-      testMatch: /homepage\.spec\.ts/,
+      testMatch: /(homepage|public-boundary)\.spec\.ts/,
       use: { baseURL: "http://127.0.0.1:5180" },
     },
     {

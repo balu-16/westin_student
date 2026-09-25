@@ -150,20 +150,26 @@ function text(
 
 function mediaImage(media: PublicMedia[] | undefined): HomeImage | undefined {
   const image = media?.find(
-    (item) => item.mimeType?.startsWith("image/") && safePublicUrl(item.url),
+    (item) =>
+      typeof item.mimeType === "string" &&
+      item.mimeType.startsWith("image/") &&
+      safePublicUrl(item.url),
   );
   if (!image) return undefined;
   const x =
-    typeof image.focalX === "number"
+    typeof image.focalX === "number" && Number.isFinite(image.focalX)
       ? Math.max(0, Math.min(1, image.focalX)) * 100
       : 50;
   const y =
-    typeof image.focalY === "number"
+    typeof image.focalY === "number" && Number.isFinite(image.focalY)
       ? Math.max(0, Math.min(1, image.focalY)) * 100
       : 50;
   return {
     src: safePublicUrl(image.url)!,
-    alt: image.altText || image.caption || "Published college image",
+    alt:
+      (typeof image.altText === "string" && image.altText) ||
+      (typeof image.caption === "string" && image.caption) ||
+      "Published college image",
     generated: false,
     position: `${x}% ${y}%`,
   };
@@ -258,7 +264,12 @@ export function createHomeModel(payload: PublicSitePayload | null): HomeModel {
         date: validDate(text(entry.content, "date") || entry.publishedAt),
         image: mediaImage(entry.media),
         pdf: safePublicUrl(pdf?.url),
-        sizeBytes: pdf?.sizeBytes,
+        sizeBytes:
+          typeof pdf?.sizeBytes === "number" &&
+          Number.isFinite(pdf.sizeBytes) &&
+          pdf.sizeBytes > 0
+            ? pdf.sizeBytes
+            : undefined,
       };
     });
   return {

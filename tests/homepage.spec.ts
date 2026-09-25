@@ -37,6 +37,11 @@ for (const width of [320, 390, 768, 1024, 1440, 1920]) {
           .map((node) => node.textContent),
       );
     expect(clipped).toEqual([]);
+    if (width >= 1024) {
+      const art = await page.locator(".sk-hero-art").boundingBox();
+      expect(art!.x).toBeGreaterThanOrEqual(0);
+      expect(art!.x + art!.width).toBeLessThanOrEqual(width);
+    }
     if (width < 768) {
       await expect(page.locator(".sk-program-mobile article")).toHaveCount(3);
       expect(
@@ -53,6 +58,17 @@ for (const width of [320, 390, 768, 1024, 1440, 1920]) {
     expect(errors).toEqual([]);
   });
 }
+
+test("back-to-top returns the reader and keyboard focus to public content", async ({ page }) => {
+  await page.goto("/");
+  await ready(page);
+  const back = page.getByRole("link", { name: "Back to top" });
+  await back.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(1000);
+  await back.click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await expect(page.locator("#public-content")).toBeFocused();
+});
 
 test("program explorer supports pointer and complete tab keyboard controls", async ({
   page,

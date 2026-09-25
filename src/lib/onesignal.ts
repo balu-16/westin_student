@@ -12,7 +12,8 @@ import { apiFetch, getSession } from './api';
  * westin-api/src/modules/notifications/notifications.service.ts; they must stay in sync.
  *
  * Permission model (identity-first, prompt only AFTER login):
- * - OneSignal.init() in index.html does NOT auto-prompt (prompts: [], notifyButton: false,
+ * - The SDK loads on the first private-portal call, never on public page load.
+ * - OneSignal.init() below does NOT auto-prompt (prompts: [], notifyButton: false,
  *   autoResubscribe: false).
  * - We never prompt before or during login. AuthContext runs identifyOneSignalUser() right
  *   after login succeeds, so login(external_id) ALWAYS precedes any optIn() — the
@@ -145,37 +146,50 @@ export function whenIdentitySettled(): Promise<unknown> {
   return identityChain;
 }
 
-/** Resolve the live OneSignal instance, waiting for the Deferred queue if needed. */
-function getOneSignalSync(): OneSignalApi | null {
-  try {
-    const w = window as unknown as Window;
-    if (w.OneSignal && typeof (w.OneSignal as OneSignalApi).login === 'function') return w.OneSignal as OneSignalApi;
-  } catch {}
-  return null;
-}
-
-function withOneSignal<T>(fn: (os: OneSignalApi) => Promise<T> | T): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const sync = getOneSignalSync();
-    if (sync) {
-      Promise.resolve(fn(sync)).then(resolve).catch(reject);
+// One shared initialization promise also serializes concurrent dashboard callers.
+// Configuration and all identity/subscription behavior below are unchanged.
+let sdkReady: Promise<OneSignalApi> | undefined;
+function loadOneSignal(): Promise<OneSignalApi> {
+  if (sdkReady) return sdkReady;
+  sdkReady = new Promise<OneSignalApi>((resolve, reject) => {
+    if (typeof window === 'undefined') {
+      reject(new Error('Push notifications require a browser'));
       return;
     }
-    const w = window as unknown as Window;
-    w.OneSignalDeferred = w.OneSignalDeferred || [];
-    w.OneSignalDeferred.push(async (os: OneSignalApi) => {
+    const timeout = window.setTimeout(() => reject(new Error('Push SDK unavailable')), 10000);
+    const fail = (error: unknown) => {
+      window.clearTimeout(timeout);
+      reject(error);
+    };
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async (os: OneSignalApi) => {
       try {
-        resolve(await fn(os));
-      } catch (e) {
-        reject(e);
+        await os.init({
+          appId: '53e2a6fc-6850-43f0-bb4f-aa60881a49e0',
+          allowLocalhostAsSecureOrigin: true,
+          notifyButton: { enable: false },
+          promptOptions: { slidedown: { prompts: [] } },
+          welcomeNotification: { disable: true },
+          autoResubscribe: false,
+        });
+        window.clearTimeout(timeout);
+        resolve(os);
+      } catch (error) {
+        fail(error);
       }
     });
-    // Do not hang login on OneSignal if SDK never loads (offline / blocked).
-    // Callers swallow errors, same as the faculty portal façade.
-    window.setTimeout(() => {
-      // no-op: we do not reject here to avoid breaking auth
-    }, 5000);
+    const script = document.createElement('script');
+    script.id = 'student-push-sdk';
+    script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+    script.async = true;
+    script.onerror = () => fail(new Error('Push SDK could not be loaded'));
+    document.head.append(script);
   });
+  return sdkReady;
+}
+
+async function withOneSignal<T>(fn: (os: OneSignalApi) => Promise<T> | T): Promise<T> {
+  return fn(await loadOneSignal());
 }
 
 // ---------- Public helpers (modular, easy to change/remove) ----------

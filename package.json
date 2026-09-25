@@ -11,7 +11,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "playwright test",
-    "assets:skybook": "node scripts/optimize-skybook.mjs"
+    "assets:skybook": "node scripts/optimize-skybook.mjs",
+    "capture:skybook": "node scripts/capture-skybook.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

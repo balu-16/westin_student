@@ -61,8 +61,8 @@ export function SkybookHero({ model }: { model: HomeModel }) {
             <picture>
               <source
                 media="(max-width: 767px)"
-                srcSet="/images/skybook/skybook-mobile-480.webp 480w, /images/skybook/skybook-mobile-960.webp 960w"
-                sizes="100vw"
+                srcSet="/images/skybook/skybook-mobile-480.webp 480w, /images/skybook/skybook-mobile-720.webp 720w, /images/skybook/skybook-mobile-960.webp 960w"
+                sizes="calc(100vw - 12px)"
               />
               <img
                 src="/images/skybook/skybook-desktop-1440.webp"

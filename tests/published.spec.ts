@@ -270,4 +270,25 @@ test("home view-model validates optional fields and never creates fake social pr
   expect(safePublicUrl("https://example.com/a.webp")).toBe(
     "https://example.com/a.webp",
   );
+  const malformedMedia = createHomeModel({
+    settings: {},
+    entries: [
+      entry("homepage-section", "learning", {}, [
+        { mimeType: 5, url: "/invalid.webp" },
+        {
+          mimeType: "image/webp",
+          url: "/valid.webp",
+          altText: {},
+          caption: [],
+          focalX: NaN,
+          focalY: 5,
+        },
+      ]),
+    ],
+  });
+  expect(malformedMedia.sections.learning.image).toMatchObject({
+    src: "/valid.webp",
+    alt: "Published college image",
+    position: "50% 100%",
+  });
 });

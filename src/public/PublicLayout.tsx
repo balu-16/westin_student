@@ -164,7 +164,11 @@ export function PublicLayout() {
       </a>
       <header className="sk-header" data-scrolled={scrolled}>
         <div className="sk-container sk-header-inner">
-          <Link to="/" className="sk-brand" aria-label="Westin College home">
+          <Link
+            to="/"
+            className="sk-brand"
+            aria-label="Westin College home. Vijayawada campus. Learn. Grow. Belong."
+          >
             <img
               src={westinLogo}
               width="575"

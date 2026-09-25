@@ -5,7 +5,7 @@ import type { HomeImage } from "./home-model";
 export function HomeMedia({
   image,
   className = "",
-  sizes = "(max-width: 767px) 100vw, 50vw",
+  sizes = "(max-width: 767px) calc(100vw - 44px), 50vw",
   caption,
   priority = false,
 }: {
@@ -34,7 +34,7 @@ export function HomeMedia({
             src={image.src}
             srcSet={
               image.asset
-                ? [480, 960, 1440]
+                ? [480, 720, 960, 1440]
                     .map(
                       (width) =>
                         `/images/skybook/${image.asset}-${width}.webp ${width}w`,
