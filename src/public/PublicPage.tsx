@@ -7,6 +7,7 @@ import { PageLoader } from '../components/Loading'
 import type { PublishedContentEntry } from '../lib/publicApi'
 import { PUBLIC_CONTENT_MODE, usePublishedEntry } from './usePublicContent'
 import { publicFetch, publicSearchUrl } from '../lib/publicApi'
+import { ContactHandoff } from './ContactHandoff'
 
 function PageIntro({ kind, title, summary }: { kind: PublicPageKind; title?: string; summary?: string }) {
   const copy = publicPageCopy[kind]
@@ -161,9 +162,11 @@ function EditorialPage({ kind }: { kind: PublicPageKind }) {
 export function PublicPage() {
   const { pathname } = useLocation()
   const page = getFixturePage(pathname)
-  const apiTarget = PUBLIC_CONTENT_MODE === 'api' ? resolveApiTarget(pathname, page?.kind ?? null) : null
+  const contactHandoff = page?.kind === 'contact' || page?.kind === 'admissions'
+  const apiTarget = PUBLIC_CONTENT_MODE === 'api' && !contactHandoff ? resolveApiTarget(pathname, page?.kind ?? null) : null
   const published = usePublishedEntry(apiTarget?.entryType ?? null, apiTarget?.slug ?? null)
   if (!page) return <NotFound />
+  if (contactHandoff) return <ContactHandoff visit={page.kind === 'admissions'} />
   if (PUBLIC_CONTENT_MODE === 'api') {
     if (published.loading) return <PageLoader label="Opening published page" className="min-h-[60vh]" />
     if (published.error) return <div className="mx-auto max-w-[900px] px-5 py-24 sm:px-8"><ErrorState message={published.error} /></div>
