@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { CalendarDays, Users } from 'lucide-react'
 import { Header } from '../components/Header'
@@ -7,16 +7,31 @@ import { SectionCard } from '../components/Card'
 import { PageLoader } from '../components/Loading'
 import { ErrorState } from '../components/ErrorState'
 import { mapClassSession, useApi, type TimetableDay } from '../lib/api'
-import { cx } from '../utils'
+import { cx, kolkataTodayIndex } from '../utils'
 import type { DaySchedule } from '../types'
 import type { DashboardLayoutContext } from '../layouts/DashboardLayout'
 
 export function Timetable() {
   const { openMenu } = useOutletContext<DashboardLayoutContext>()
   const { data, error, loading, reload } = useApi<TimetableDay[]>('/timetable')
-  const [activeIndex, setActiveIndex] = useState(0)
+  // Default to today's IST column so ongoing/upcoming is visible immediately.
+  const [activeIndex, setActiveIndex] = useState(() => kolkataTodayIndex())
   const trackRef = useRef<HTMLDivElement>(null)
   const scrollTimer = useRef<number | undefined>(undefined)
+
+  // Refresh on tab focus/visibility so upcoming → ongoing flips without reload.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') reload()
+    }
+    const onFocus = () => reload()
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onFocus)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [reload])
 
   const pending = loading && !data
   const failed = error && !data
@@ -60,6 +75,20 @@ export function Timetable() {
       ) : (
         <>
           {/* Day tabs */}
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                const today = kolkataTodayIndex()
+                setActiveIndex(today)
+                goToDay(today)
+                reload()
+              }}
+              className="rounded-full border border-line bg-white px-3.5 py-1.5 text-xs font-bold text-primary-dark shadow-sm transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              Today
+            </button>
+          </div>
           <div
             role="tablist"
             aria-label="Select weekday"
@@ -99,24 +128,36 @@ export function Timetable() {
               aria-label="Weekly timetable, swipe to change day"
               className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-xl outline-none [-ms-overflow-style:none] [scrollbar-width:none] focus-visible:ring-2 focus-visible:ring-primary/40 [&::-webkit-scrollbar]:hidden"
             >
-              {weeklyTimetable.map(({ day, classes }) => (
-                <div
-                  key={day}
-                  role="tabpanel"
-                  aria-label={`${day} classes`}
-                  className="w-full shrink-0 snap-start"
-                >
-                  <ol className="relative">
-                    <span
-                      aria-hidden="true"
-                      className="absolute bottom-2 left-[100px] top-2 w-px bg-line sm:left-[138px] lg:left-[148px]"
-                    />
-                    {classes.map((session) => (
-                      <TimetableCard key={session.id} session={session} />
-                    ))}
-                  </ol>
+              {weeklyTimetable.length === 0 ? (
+                <div className="w-full shrink-0 snap-start">
+                  <p className="py-10 text-center text-sm text-ink-soft">
+                    No timetable assigned yet — contact your admin office.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                weeklyTimetable.map(({ day, classes }) => (
+                  <div
+                    key={day}
+                    role="tabpanel"
+                    aria-label={`${day} classes`}
+                    className="w-full shrink-0 snap-start"
+                  >
+                    <ol className="relative">
+                      <span
+                        aria-hidden="true"
+                        className="absolute bottom-2 left-[100px] top-2 w-px bg-line sm:left-[138px] lg:left-[148px]"
+                      />
+                      {classes.length > 0 ? (
+                        classes.map((session) => (
+                          <TimetableCard key={session.id} session={session} />
+                        ))
+                      ) : (
+                        <p className="py-8 text-center text-sm text-ink-soft">No classes on {day}.</p>
+                      )}
+                    </ol>
+                  </div>
+                ))
+              )}
             </div>
           </SectionCard>
 

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { DashboardLayout } from './layouts/DashboardLayout'
 import { PageLoader } from './components/Loading'
+import { PublicLayout } from './public/PublicLayout'
 
 // Route-level code splitting: every page ships as its own lazy chunk so the
 // initial bundle only carries the router, layout and shared primitives.
@@ -17,6 +18,10 @@ const StudyMaterials = lazy(() =>
 const Events = lazy(() => import('./pages/Events').then((m) => ({ default: m.Events })))
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
 const OtpDemo = lazy(() => import('./pages/OtpDemo').then((m) => ({ default: m.OtpDemo })))
+const PublicHome = lazy(() => import('./public/PublicHome').then((m) => ({ default: m.PublicHome })))
+const PublicPage = lazy(() => import('./public/PublicPage').then((m) => ({ default: m.PublicPage })))
+const PublicSearch = lazy(() => import('./public/PublicPage').then((m) => ({ default: m.PublicSearch })))
+const PublicNotFound = lazy(() => import('./public/PublicPage').then((m) => ({ default: m.NotFound })))
 
 /** Walker fallback for chunk-loaded routes — shows the section's own
  *  dedicated label so it never fights the page's data-loading state. */
@@ -27,22 +32,6 @@ function StudentPageFallback({ label }: { label: string }) {
 /** Full-page fallback for the standalone login screen. */
 function LoginFallback({ label }: { label: string }) {
   return <PageLoader label={label} className="min-h-screen" />
-}
-
-/** Root "/" is auth-aware: authenticated users go to dashboard, guests to login.
- *  Using a component (not a static <Navigate>) prevents an authenticated user
- *  from ever landing on /login via history back. */
-function RootRedirect() {
-  const { isAuthenticated } = useAuth()
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
-  return <Navigate to="/login" replace />
-}
-
-/** Catch-all is also auth-aware so unknown URLs never expose login to authed users. */
-function CatchAllRedirect() {
-  const { isAuthenticated } = useAuth()
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
-  return <Navigate to="/login" replace />
 }
 
 /** Blocks authenticated users from seeing the login screen.
@@ -68,7 +57,152 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<RootRedirect />} />
+      <Route element={<PublicLayout />}>
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<PageLoader label="Opening Westin" className="min-h-[60vh]" />}>
+              <PublicHome />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/about/*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening About Westin" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/why-westin"
+          element={
+            <Suspense fallback={<PageLoader label="Opening Why Westin" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/partners/*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening partners" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/programs/*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening programs" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/campus/*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening campus life" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/placements"
+          element={
+            <Suspense fallback={<PageLoader label="Opening placements" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/career-planner"
+          element={
+            <Suspense fallback={<PageLoader label="Opening career planning" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/news/*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening news" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/blog/*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening the journal" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/gallery/*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening gallery" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/magazine"
+          element={
+            <Suspense fallback={<PageLoader label="Opening the Westin shelf" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/testimonials/*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening stories" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/success-stories/*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening success stories" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/admissions"
+          element={
+            <Suspense fallback={<PageLoader label="Opening admissions" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <Suspense fallback={<PageLoader label="Opening contact" className="min-h-[60vh]" />}>
+              <PublicPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <Suspense fallback={<PageLoader label="Opening search" className="min-h-[60vh]" />}>
+              <PublicSearch />
+            </Suspense>
+          }
+        />
+        <Route
+          path="*"
+          element={
+            <Suspense fallback={<PageLoader label="Opening page" className="min-h-[60vh]" />}>
+              <PublicNotFound />
+            </Suspense>
+          }
+        />
+      </Route>
       <Route
         path="/login"
         element={
@@ -143,19 +277,18 @@ function AppRoutes() {
           }
         />
       </Route>
-      <Route path="*" element={<CatchAllRedirect />} />
     </Routes>
   )
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <ErrorBoundary>
           <AppRoutes />
         </ErrorBoundary>
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }

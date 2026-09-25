@@ -62,6 +62,17 @@ interface CalendarWeek {
 
 const weekdayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+/** h1..h6 codes → Hour label + fixed time (same slots as timetable P1..P6). */
+const PERIOD_LABELS: Record<string, string> = {
+  h1: 'Hour 1 • 09:00 AM–10:00 AM',
+  h2: 'Hour 2 • 10:00 AM–11:00 AM',
+  h3: 'Hour 3 • 11:15 AM–12:30 PM',
+  h4: 'Hour 4 • 01:30 PM–02:30 PM',
+  h5: 'Hour 5 • 02:30 PM–03:30 PM',
+  h6: 'Hour 6 • 03:40 PM–05:00 PM',
+}
+const periodLabel = (p: string) => PERIOD_LABELS[p.toLowerCase()] ?? p.toUpperCase()
+
 const overviewColors: Record<string, string> = {
   Present: '#3BA7F2',
   Absent: '#F4718B',
@@ -563,7 +574,7 @@ export function Attendance() {
                       {dayDetail.map((p, i) => (
                         <li key={i} className="flex items-center justify-between gap-3">
                           <span className="font-semibold text-ink">
-                            {p.period.toUpperCase()} • {p.code ?? '—'} {p.subject ?? ''}
+                            {periodLabel(p.period)} • {p.code ?? '—'} {p.subject ?? ''}
                           </span>
                           <span
                             className={cx(

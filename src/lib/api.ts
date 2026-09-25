@@ -247,7 +247,11 @@ export function useApi<T>(path: string | null, deps: ReadonlyArray<unknown> = []
   const [loading, setLoading] = useState<boolean>(path !== null)
   const [reloadNonce, setReloadNonce] = useState(0)
 
-  const reload = useCallback(() => setReloadNonce((n) => n + 1), [])
+  const reload = useCallback(() => {
+    // Truly bust the cache so Retry always hits the network (faculty portal parity).
+    if (path) cache.delete(path)
+    setReloadNonce((n) => n + 1)
+  }, [path])
 
   useEffect(() => {
     if (path === null) {

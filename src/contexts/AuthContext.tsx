@@ -17,6 +17,7 @@ import {
   setSession,
   type Session,
 } from '../lib/api'
+import { useLocation } from 'react-router-dom'
 import { identifyOneSignalUser, logoutOneSignalUser } from '../lib/onesignal'
 import type { Student } from '../types'
 
@@ -32,6 +33,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const location = useLocation()
   const [user, setUser] = useState<Student | null>(() => {
     const session = getSession()
     return session ? mapStudentUser(session.user) : null
@@ -43,9 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // banner / Settings toggle, so the subscription is always created under the
   // logged-in student, never anonymously.
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id || !isPrivateStudentPath(location.pathname)) return
     void identifyOneSignalUser({ id: user.id }).catch(() => undefined)
-  }, [user?.id])
+  }, [location.pathname, user?.id])
 
   const login = useCallback(async (emailOrId: string, password: string) => {
     const session = await apiFetch<Session>('/auth/login', {
@@ -104,6 +106,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+function isPrivateStudentPath(pathname: string) {
+  return ['/dashboard', '/timetable', '/attendance', '/materials', '/events', '/settings', '/otp-demo']
+    .some((path) => pathname === path || pathname.startsWith(path + '/'))
 }
 
 export function useAuth(): AuthContextValue {

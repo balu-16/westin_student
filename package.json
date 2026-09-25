@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist-server",
+    "ssr:smoke": "npm run build:ssr && node scripts/ssr-smoke.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

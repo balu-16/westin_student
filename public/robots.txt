@@ -1,0 +1,3 @@
+# The default build uses local fixture content and must not be indexed.
+User-agent: *
+Disallow: /
